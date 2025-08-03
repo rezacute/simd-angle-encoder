@@ -1,0 +1,22 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "simd_angle_encoder"
+version = "0.1.0"
+description = "SIMD-optimized angle encoding for quantum computing"
+authors = [
+    {name = "Hybriqu Team"}
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: MIT License",
+]
+
+[tool.maturin]
+python-source = "python"
+features = []
+module-name = "simd_angle_encoder._simd_angle_encoder" 

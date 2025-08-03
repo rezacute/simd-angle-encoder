@@ -1,0 +1,76 @@
+# Rust specific ignores
+/target/
+**/*.rs.bk
+*.pdb
+*.log
+*.pt
+*.pth
+Cargo.lock
+data/
+checkpoints/
+# Python specific ignores
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+archive/
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+*.dylib
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Benchmark results and plots
+benchmark_output.txt
+
+# Python distribution / packaging
+.Python
+env/
+bin/
+include/
+local/
+pip-selfcheck.json
+
+# Generated documentation
+/doc/
+/target/doc/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/ 
+*plots*/
+.specs/
+
+# Hybriqu configuration file (contains sensitive credentials)
+hybriqu.yml
