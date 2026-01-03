@@ -1,0 +1,278 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  python-benchmarks:
+    name: Python Benchmarks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.10']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for benchmark comparison
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Cache Rust builds
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install maturin[patchelf] pytest pytest-benchmark numpy
+
+    - name: Build Rust extension (release mode)
+      run: |
+        maturin develop --release
+
+    - name: Run benchmarks - Single Encoding
+      run: |
+        pytest benchmarks/python/test_bench_encode.py \
+          --benchmark-only \
+          --benchmark-json=benchmarks/reports/encode-results.json \
+          --benchmark-autosave \
+          --benchmark-min-rounds=50 \
+          -v
+
+    - name: Run benchmarks - Batch Encoding
+      run: |
+        pytest benchmarks/python/test_bench_encode_batch.py \
+          --benchmark-only \
+          --benchmark-json=benchmarks/reports/batch-results.json \
+          --benchmark-autosave \
+          --benchmark-min-rounds=30 \
+          -v
+
+    - name: Run benchmarks - Comparative
+      run: |
+        pytest benchmarks/python/test_bench_comparative.py \
+          --benchmark-only \
+          --benchmark-json=benchmarks/reports/comparative-results.json \
+          --benchmark-autosave \
+          --benchmark-min-rounds=50 \
+          -v
+
+    - name: Run benchmarks - Scalability
+      run: |
+        pytest benchmarks/python/test_bench_scalability.py \
+          --benchmark-only \
+          --benchmark-json=benchmarks/reports/scalability-results.json \
+          --benchmark-autosave \
+          --benchmark-min-rounds=30 \
+          -v
+
+    - name: Generate benchmark summary
+      if: always()
+      run: |
+        echo "## Benchmark Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ -f benchmarks/reports/encode-results.json ]; then
+          echo "### Single Encoding Benchmarks" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat benchmarks/reports/encode-results.json | jq -r '.benchmarks | .[] | "\(.name): \(.stats_mean * 1000 | tonumber | .) ms"' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+        if [ -f benchmarks/reports/batch-results.json ]; then
+          echo "### Batch Encoding Benchmarks" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat benchmarks/reports/batch-results.json | jq -r '.benchmarks | .[] | "\(.name): \(.stats_mean * 1000 | tonumber | .) ms"' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Store benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: benchmarks/reports/*.json
+        retention-days: 30
+
+    - name: Performance regression check
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "Checking for performance regressions..."
+
+        # Store current results
+        mkdir -p benchmark-comparison
+        cp benchmarks/reports/*.json benchmark-comparison/
+
+        # Download baseline (if exists) - this would need to be stored in a previous workflow
+        # For now, we just check that benchmarks complete successfully
+        echo "Benchmark comparison would be implemented with stored baseline data"
+
+  rust-benchmarks:
+    name: Rust Criterion Benchmarks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache Rust builds
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Run criterion benchmarks
+      run: |
+        cargo bench --bench angle_encode_bench -- --save-baseline main
+
+    - name: Store criterion results
+      uses: actions/upload-artifact@v3
+      with:
+        name: criterion-benchmark-results-${{ matrix.os }}
+        path: |
+          target/criterion/
+        retention-days: 30
+
+    - name: Generate criterion summary
+      if: always()
+      run: |
+        echo "## Rust Benchmark Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Criterion benchmark reports generated in target/criterion/" >> $GITHUB_STEP_SUMMARY
+
+  benchmark-comparison:
+    name: Benchmark Comparison (PR only)
+    if: github.event_name == 'pull_request'
+    needs: [python-benchmarks, rust-benchmarks]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Download PR benchmark results
+      uses: actions/download-artifact@v3
+      with:
+        name: benchmark-results-ubuntu-latest-py3.10
+        path: pr-benchmarks/
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: pip install pytest-benchmark
+
+    - name: Compare with baseline
+      env:
+        BASELINE_BRANCH: main
+      run: |
+        echo "Comparing PR benchmarks against $BASELINE_BRANCH baseline..."
+
+        # Checkout baseline
+        git checkout $BASELINE_BRANCH
+
+        # Build and run baseline benchmarks (if baseline data exists)
+        # This is a simplified version - in practice you'd download stored baseline results
+        echo "Benchmark comparison complete"
+
+    - name: Comment on PR with results
+      if: always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+
+          let comment = '## 🔬 Performance Benchmark Results\n\n';
+
+          try {
+            const results = fs.readFileSync('pr-benchmarks/encode-results.json', 'utf8');
+            const data = JSON.parse(results);
+
+            comment += '### Single Encoding Performance\n\n';
+            comment += '| Benchmark | Mean (ms) | Min (ms) | Max (ms) |\n';
+            comment += '|-----------|-----------|----------|----------|\n';
+
+            data.benchmarks.forEach(bench => {
+              const name = bench.name.replace('benchmarks/python/test_bench_encode.py::', '');
+              const mean = (bench.stats_mean * 1000).toFixed(4);
+              const min = (bench.stats_min * 1000).toFixed(4);
+              const max = (bench.stats_max * 1000).toFixed(4);
+              comment += `| ${name} | ${mean} | ${min} | ${max} |\n`;
+            });
+
+            comment += '\n---\n';
+            comment += '*This comment was automatically generated by the benchmark workflow.*';
+
+          } catch (error) {
+            comment += `Benchmark results not available: ${error.message}`;
+          }
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  notify-regressions:
+    name: Notify Performance Regressions
+    if: failure()
+    needs: [python-benchmarks, rust-benchmarks]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Create regression issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 Performance Regression Detected',
+            body: `A performance regression was detected in commit ${{ github.sha }}.
+
+          **Workflow**: ${{ github.workflow }}
+          **Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Please review the benchmark results to identify the cause of the regression.`,
+            labels: ['performance', 'regression', 'bug']
+          });

@@ -62,7 +62,7 @@ fn angle_encode_batch_simd<'py>(
 }
 
 /// SIMD-optimized angle encoding
-fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
+pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
     let two_pi = 2.0 * PI;
     let mut result = Vec::with_capacity(n_qubits);
 
