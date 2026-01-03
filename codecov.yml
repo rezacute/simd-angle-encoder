@@ -1,0 +1,65 @@
+# Codecov configuration for SIMD Angle Encoder
+
+coverage:
+  status:
+    project:
+      default:
+        target: 85%
+        threshold: 1%
+        base: auto
+        if_ci_failed: error
+
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        base: auto
+        if_ci_failed: error
+
+# Coverage precision
+precision: 2
+
+# Round coverage values
+round: down
+
+# Range of coverage values
+range: "70...100"
+
+# Comment configuration
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+# Ignore paths
+ignore:
+  - "tests/**/*"
+  - "benchmarks/**/*"
+  - "**/*.md"
+  - "**/*.txt"
+  - "**/*.yml"
+  - "**/*.yaml"
+
+# Flag configurations
+flags:
+  rust:
+    paths:
+      - src/
+    carryforward: true
+
+  python:
+    paths:
+      - python/
+    carryforward: true
+
+  tests:
+    paths:
+      - tests/
+    carryforward: true
+
+# GitHub checks
+github_checks:
+  annotations: true
+  annotations: "patch" # can be "patch" or "full"

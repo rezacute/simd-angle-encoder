@@ -1,0 +1,27 @@
+# Development dependencies for SIMD Angle Encoder
+# Install with: pip install -r requirements-dev.txt
+
+# Core dependencies
+maturin[patchelf]>=1.0,<2.0
+numpy>=1.20.0
+
+# Testing dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-benchmark>=4.0.0
+hypothesis>=6.0.0
+
+# Code quality and linting
+black>=23.0.0
+isort>=5.12.0
+flake8>=7.0.0
+flake8-docstrings>=1.7.0
+mypy>=1.0.0
+bandit>=1.7.0
+
+# Pre-commit hooks
+pre-commit>=3.0.0
+
+# Documentation (optional)
+# sphinx>=7.0.0
+# sphinx-rust>=0.2.0

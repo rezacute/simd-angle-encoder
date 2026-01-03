@@ -1,0 +1,282 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Rust Quality Checks
+  rust-quality:
+    name: Rust Quality Checks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
+
+    - name: Cache Rust builds
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Check formatting
+      run: cargo fmt -- --check
+
+    - name: Run Clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings -D clippy::all -D clippy::pedantic
+
+    - name: Run Rust tests
+      run: cargo test --verbose
+
+    - name: Build release
+      run: cargo build --release --verbose
+
+  # Python Tests with Coverage
+  python-tests:
+    name: Python Tests (Py${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: rust-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Exclude some combinations to reduce CI load
+          - os: windows-latest
+            python-version: '3.8'
+          - os: macos-latest
+            python-version: '3.8'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Cache Rust builds
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install maturin[patchelf] pytest pytest-cov numpy hypothesis
+
+    - name: Build Rust extension
+      run: |
+        maturin develop --release
+
+    - name: Run tests with coverage
+      run: |
+        pytest tests/ \
+          --cov=simd_angle_encoder \
+          --cov-report=xml \
+          --cov-report=term-missing \
+          --cov-report=html \
+          -v \
+          --tb=short
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: python-${{ matrix.python-version }}-${{ matrix.os }}
+        name: codecov-py${{ matrix.python-version }}-${{ matrix.os }}
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Archive coverage reports
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: htmlcov/
+        retention-days: 30
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: python-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache Rust builds
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install maturin[patchelf] pytest numpy
+
+    - name: Build Rust extension
+      run: |
+        maturin develop --release
+
+    - name: Run integration tests
+      run: |
+        pytest tests/integration/ -v
+
+  # Property-Based Tests
+  property-tests:
+    name: Property-Based Tests
+    runs-on: ubuntu-latest
+    needs: rust-quality
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache Rust builds
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install maturin[patchelf] pytest numpy hypothesis
+
+    - name: Build Rust extension
+      run: |
+        maturin develop --release
+
+    - name: Run property-based tests
+      run: |
+        pytest tests/property/ -v --hypothesis-show-statistics
+
+  # Code Coverage Summary
+  coverage-summary:
+    name: Coverage Summary
+    runs-on: ubuntu-latest
+    needs: python-tests
+    if: always()
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate coverage summary
+      run: |
+        echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Coverage reports have been uploaded to Codecov." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "View detailed coverage at: https://codecov.io" >> $GITHUB_STEP_SUMMARY
+
+  # Security Scanning
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Rust security audit
+      uses: actions-rust-lang/audit@v1
+      continue-on-error: true
+
+    - name: Check for outdated dependencies
+      uses: actions-rust-lang/cargo@v1
+      with:
+        command: outdated
+        args: --exit-code 1
+      continue-on-error: true
+
+  # Build Status Summary
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [rust-quality, python-tests, integration-tests, property-tests]
+    if: always()
+
+    steps:
+    - name: Generate build summary
+      run: |
+        echo "## CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Job Status" >> $GITHUB_STEP_SUMMARY
+        echo "- Rust Quality: ${{ needs.rust-quality.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Python Tests: ${{ needs.python-tests.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Property Tests: ${{ needs.property-tests.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "All artifacts and reports are available in the workflow run." >> $GITHUB_STEP_SUMMARY

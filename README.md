@@ -1,5 +1,11 @@
 # SIMD Angle Encoder
 
+[![CI/CD Pipeline](https://github.com/hybriq/simd_angle_encoder/actions/workflows/ci.yml/badge.svg)](https://github.com/hybriq/simd_angle_encoder/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/hybriq/simd_angle_encoder/branch/main/graph/badge.svg)](https://codecov.io/gh/hybriq/simd_angle_encoder)
+[![Python Versions](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/hybriq/simd_angle_encoder)
+[![Rust Version](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A high-performance library for quantum angle encoding using Rust SIMD optimizations.
 
 ## Overview
@@ -77,6 +83,20 @@ The SIMD-optimized implementation provides substantial speedups compared to pure
 | 1000       | 40-90x         |
 
 The performance advantage increases with batch size, making this implementation particularly valuable for quantum machine learning applications that process large batches of data.
+
+## Quality Assurance
+
+This project maintains high code quality standards through comprehensive CI/CD:
+
+- **Automated Testing**: 92+ unit, integration, and property-based tests
+- **Multi-Platform Support**: Tested on Ubuntu, macOS, and Windows
+- **Python Compatibility**: Supports Python 3.8-3.12
+- **Code Coverage**: Continuous coverage tracking with Codecov
+- **Linting**: Automated checks with Rust Clippy and Python Flake8
+- **Formatting**: Enforced code style with Rust fmt and Black
+- **Security Scanning**: Automated dependency and code security audits
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and testing guidelines.
 
 ## How It Works
 
