@@ -12,10 +12,16 @@ fn angle_encode_simd<'py>(
     data: PyReadonlyArray1<f64>,
     n_qubits: usize,
 ) -> Bound<'py, PyArray1<f64>> {
-    // Handle both contiguous and non-contiguous arrays
-    let data_array = data.as_array();
-    let data_slice: Vec<f64> = data_array.to_vec();
-    let result = simd_angle_encode(&data_slice, n_qubits);
+    // Try zero-copy access first, fallback to copy if non-contiguous
+    let data_slice = if let Ok(slice) = data.as_slice() {
+        // Zero-copy path (fast)
+        slice
+    } else {
+        // Fallback to copy for non-contiguous arrays (rare case)
+        &data.as_array().to_vec()
+    };
+
+    let result = simd_angle_encode(data_slice, n_qubits);
     result.into_pyarray(py)
 }
 
@@ -37,13 +43,20 @@ fn angle_encode_batch_simd<'py>(
     // Get array view (handles non-contiguous arrays)
     let data_array = batch_data.as_array();
 
-    // Process each batch
+    // Process each batch with optimized row access
     for b in 0..batch_size {
-        // Extract row as a vector (handles non-contiguous arrays)
-        let batch_slice: Vec<f64> = data_array.row(b).to_vec();
+        // Try zero-copy row access, fallback to copy if non-contiguous
+        let row = data_array.row(b);
+        let batch_slice = if let Some(slice) = row.as_slice() {
+            // Zero-copy path (fast)
+            slice
+        } else {
+            // Fallback to copy for non-contiguous rows (rare case)
+            &row.to_vec()
+        };
 
         // Encode this batch
-        let encoded = simd_angle_encode(&batch_slice, n_qubits);
+        let encoded = simd_angle_encode(batch_slice, n_qubits);
 
         // Copy to result
         for (i, &val) in encoded.iter().enumerate() {
@@ -59,30 +72,34 @@ fn angle_encode_batch_simd<'py>(
     result_array.into_pyarray(py)
 }
 
-/// SIMD-optimized angle encoding
+/// SIMD-optimized angle encoding with memory optimization
 #[must_use]
 pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
+    const SMALL_SIZE: usize = 32; // 256 bytes (fits in stack)
+
+    // Fast path: Stack allocation for small data
+    if n_qubits <= SMALL_SIZE {
+        let mut result = [0.0f64; SMALL_SIZE];
+        let two_pi = 2.0 * PI;
+
+        // Process data in single pass (no inner loop!)
+        let len = data.len().min(n_qubits);
+        for i in 0..len {
+            result[i] = data[i] * two_pi;
+        }
+
+        // Return only the needed portion
+        return result[0..n_qubits].to_vec();
+    }
+
+    // Slow path: Heap allocation for large data
     let two_pi = 2.0 * PI;
     let mut result = Vec::with_capacity(n_qubits);
 
-    // Process in chunks for better cache locality and vectorization
-    let chunk_size = 4; // Size that works well with SIMD units
-    let mut i = 0;
-
-    // Process 4 elements at a time (SIMD-friendly)
-    while i + chunk_size <= data.len() && i < n_qubits {
-        for j in 0..chunk_size {
-            if i + j < n_qubits {
-                result.push(data[i + j] * two_pi);
-            }
-        }
-        i += chunk_size;
-    }
-
-    // Handle remaining elements
-    while i < data.len() && i < n_qubits {
+    // Simplified single-pass algorithm (removed inner loop)
+    let len = data.len().min(n_qubits);
+    for i in 0..len {
         result.push(data[i] * two_pi);
-        i += 1;
     }
 
     // Pad with zeros if needed
