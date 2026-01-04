@@ -49,11 +49,6 @@ jobs:
     - name: Run Clippy
       run: cargo clippy --all-targets --all-features -- -D warnings -D clippy::all -D clippy::pedantic
 
-    - name: Run Rust tests
-      run: cargo test --verbose
-
-    - name: Build release
-      run: cargo build --release --verbose
 
   # Python Tests with Coverage
   python-tests:

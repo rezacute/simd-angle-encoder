@@ -3,6 +3,8 @@
 // Low-level Rust microbenchmarks to measure the performance of
 // the core encoding functions without Python overhead.
 
+#![allow(clippy::cast_precision_loss, clippy::explicit_iter_loop)]
+
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use simd_angle_encoder::simd_angle_encode;
 
@@ -11,8 +13,7 @@ fn generate_data(size: usize) -> Vec<f64> {
     (0..size)
         .map(|i| {
             // Use deterministic pseudo-random values based on index
-            let x = ((i as f64) * 1.3_4254_f64).fract();
-            x
+            ((i as f64) * 1.342_54_f64).fract()
         })
         .collect()
 }
@@ -52,7 +53,7 @@ fn bench_encode_qubits(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark encode when data is smaller than n_qubits
+/// Benchmark encode when data is smaller than `n_qubits`
 fn bench_encode_data_smaller(c: &mut Criterion) {
     let mut group = c.benchmark_group("encode_data_smaller");
 
@@ -67,7 +68,7 @@ fn bench_encode_data_smaller(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark encode when data is larger than n_qubits
+/// Benchmark encode when data is larger than `n_qubits`
 fn bench_encode_data_larger(c: &mut Criterion) {
     let mut group = c.benchmark_group("encode_data_larger");
 

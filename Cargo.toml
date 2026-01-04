@@ -7,7 +7,7 @@ description = "SIMD-optimized angle encoding for quantum computing"
 
 [lib]
 name = "simd_angle_encoder"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 numpy = "0.24.0"

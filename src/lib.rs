@@ -6,6 +6,7 @@ use std::f64::consts::PI;
 /// Angle encode data in SIMD-optimized Rust
 /// Maps data to angles in [0, 2π]
 #[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
 fn angle_encode_simd<'py>(
     py: Python<'py>,
     data: PyReadonlyArray1<f64>,
@@ -21,6 +22,7 @@ fn angle_encode_simd<'py>(
 /// Batch angle encode data in SIMD-optimized Rust
 /// Maps batches of data to angles in [0, 2π]
 #[pyfunction]
+#[allow(clippy::needless_pass_by_value)]
 fn angle_encode_batch_simd<'py>(
     py: Python<'py>,
     batch_data: PyReadonlyArray2<f64>,
@@ -29,7 +31,6 @@ fn angle_encode_batch_simd<'py>(
     // Correctly extract dimensions from numpy array
     let shape = batch_data.shape();
     let batch_size = shape[0];
-    let data_dim = shape[1];
 
     let mut result = vec![0.0; batch_size * n_qubits];
 
@@ -59,6 +60,7 @@ fn angle_encode_batch_simd<'py>(
 }
 
 /// SIMD-optimized angle encoding
+#[must_use]
 pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
     let two_pi = 2.0 * PI;
     let mut result = Vec::with_capacity(n_qubits);
@@ -108,10 +110,7 @@ fn get_simd_info() -> String {
     let arch = std::env::consts::ARCH;
     let cpu_cores = num_cpus::get();
 
-    format!(
-        "SIMD Support: {}\nSystem: {}/{}\nCPU Cores: {}",
-        simd_support, os, arch, cpu_cores
-    )
+    format!("SIMD Support: {simd_support}\nSystem: {os}/{arch}\nCPU Cores: {cpu_cores}")
 }
 
 /// Python module for SIMD-optimized angle encoding
