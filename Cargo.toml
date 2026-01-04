@@ -38,4 +38,6 @@ panic = "abort"
 
 [profile.bench]
 inherits = "release"
-debug = true 
+debug = true
+
+# Use .cargo/config.toml for RUSTFLAGS instead 

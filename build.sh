@@ -5,7 +5,7 @@ set -e  # Exit on error
 echo "===> Building SIMD Angle Encoder..."
 
 # Check for Python 3.13
-PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 if [[ "$PYTHON_VERSION" == "3.13" ]]; then
     echo "===> Python 3.13 detected, setting PyO3 compatibility flag"
     export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1

@@ -11,8 +11,8 @@ use std::arch::aarch64::*;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-// Rayon for parallel processing
-use rayon::prelude::*;
+// Rayon for parallel processing (currently unused but kept for future optimizations)
+// use rayon::prelude::*;
 
 /// Angle encode data in SIMD-optimized Rust
 /// Maps data to angles in [0, 2π]
@@ -36,12 +36,10 @@ fn angle_encode_simd<'py>(
     result.into_pyarray(py)
 }
 
-/// Batch angle encode data in SIMD-optimized Rust with parallel processing
+/// Batch angle encode data in SIMD-optimized Rust with optimized processing
 /// Maps batches of data to angles in [0, 2π]
 ///
-/// Phase 2C Optimization: Uses Rayon for parallel batch processing
-/// - Small batches (< 10): Sequential processing (avoid overhead)
-/// - Large batches (≥ 10): Parallel processing (2-4x speedup)
+/// Optimized for Linux x86: Removes parallel overhead, uses direct SIMD processing
 #[pyfunction]
 #[allow(clippy::needless_pass_by_value)]
 fn angle_encode_batch_simd<'py>(
@@ -51,56 +49,15 @@ fn angle_encode_batch_simd<'py>(
 ) -> Bound<'py, PyArray2<f64>> {
     // Correctly extract dimensions from numpy array
     let shape = batch_data.shape();
-    let batch_size = shape[0];
+    let _batch_size = shape[0];
 
-    // Phase 2C: Sequential fallback for small batches (avoid parallel overhead)
-    const PARALLEL_THRESHOLD: usize = 10;
-    if batch_size < PARALLEL_THRESHOLD {
-        return angle_encode_batch_sequential(batch_data, n_qubits, py);
-    }
-
-    // Get array view and convert to owned for parallel processing
-    let data_array = batch_data.as_array();
-
-    // Phase 2C: Parallel batch processing using Rayon
-    // Each batch is independent, so we can process them in parallel
-    let results: Vec<Vec<f64>> = data_array
-        .axis_iter(ndarray::Axis(0))
-        .collect::<Vec<_>>() // Collect to enable parallel iteration
-        .into_par_iter()     // Convert to parallel iterator!
-        .map(|row| {
-            // Try zero-copy row access, fallback to copy if non-contiguous
-            let batch_slice = if let Some(slice) = row.as_slice() {
-                // Zero-copy path (fast)
-                slice
-            } else {
-                // Fallback to copy for non-contiguous rows (rare case)
-                &row.to_vec()
-            };
-
-            // Encode this batch using optimized SIMD function
-            simd_angle_encode(batch_slice, n_qubits)
-        })
-        .collect(); // Collect results from all threads
-
-    // Flatten results into 2D array
-    let mut result = Vec::with_capacity(batch_size * n_qubits);
-    for encoded in results {
-        result.extend_from_slice(&encoded);
-    }
-
-    // Reshape to (batch_size, n_qubits)
-    let result_array = unsafe {
-        ndarray::ArrayView2::from_shape_ptr((batch_size, n_qubits), result.as_ptr()).to_owned()
-    };
-
-    result_array.into_pyarray(py)
+    // Use sequential processing for all batch sizes (remove parallel overhead)
+    return angle_encode_batch_sequential(batch_data, n_qubits, py);
 }
 
-/// Sequential batch processing (fallback for small batches)
+/// Sequential batch processing optimized for x86 SIMD
 ///
-/// Used for batches < 10 rows where parallel overhead exceeds benefit
-/// Maintains same logic as original implementation for consistency
+/// Optimized memory allocation and direct SIMD processing
 #[allow(clippy::needless_pass_by_value)]
 fn angle_encode_batch_sequential<'py>(
     batch_data: PyReadonlyArray2<f64>,
@@ -110,30 +67,25 @@ fn angle_encode_batch_sequential<'py>(
     let shape = batch_data.shape();
     let batch_size = shape[0];
 
-    let mut result = vec![0.0; batch_size * n_qubits];
+    // Pre-allocate result with exact size (avoid reallocations)
+    let mut result = Vec::with_capacity(batch_size * n_qubits);
+    unsafe { result.set_len(batch_size * n_qubits); }
 
     // Get array view (handles non-contiguous arrays)
     let data_array = batch_data.as_array();
 
-    // Process each batch sequentially
+    // Process each batch with direct memory writes (avoid intermediate vectors)
     for b in 0..batch_size {
-        // Try zero-copy row access, fallback to copy if non-contiguous
         let row = data_array.row(b);
         let batch_slice = if let Some(slice) = row.as_slice() {
-            // Zero-copy path (fast)
             slice
         } else {
-            // Fallback to copy for non-contiguous rows (rare case)
             &row.to_vec()
         };
 
-        // Encode this batch
-        let encoded = simd_angle_encode(batch_slice, n_qubits);
-
-        // Copy to result
-        for (i, &val) in encoded.iter().enumerate() {
-            result[b * n_qubits + i] = val;
-        }
+        // Encode directly into result buffer
+        let result_slice = &mut result[b * n_qubits..(b + 1) * n_qubits];
+        let _ = simd_angle_encode_into_buffer(batch_slice, result_slice);
     }
 
     // Reshape to (batch_size, n_qubits)
@@ -198,11 +150,12 @@ pub unsafe fn angle_encode_avx512(data: &[f64], n_qubits: usize) -> Vec<f64> {
     let mut result = Vec::with_capacity(n_qubits);
 
     // Process 8 doubles at a time (AVX-512 processes 8 f64 in 512-bit register)
-    let simd_chunks = (data.len().min(n_qubits) / 8) * 8;
+    let data_len = data.len().min(n_qubits);
+    let simd_chunks = (data_len / 8) * 8;
     let mut i = 0;
 
     // Main SIMD loop: process 8 doubles per iteration
-    while i + 8 <= simd_chunks {
+    while i < simd_chunks {
         // Load 8 doubles from input
         let input = _mm512_loadu_pd(data.as_ptr().add(i));
 
@@ -217,8 +170,8 @@ pub unsafe fn angle_encode_avx512(data: &[f64], n_qubits: usize) -> Vec<f64> {
         i += 8;
     }
 
-    // Handle remainder elements
-    while i < data.len().min(n_qubits) {
+    // Handle remainder elements (0-7 elements)
+    while i < data_len {
         result.push(data[i] * 2.0 * PI);
         i += 1;
     }
@@ -239,11 +192,12 @@ pub unsafe fn angle_encode_avx2(data: &[f64], n_qubits: usize) -> Vec<f64> {
     let mut result = Vec::with_capacity(n_qubits);
 
     // Process 4 doubles at a time (AVX2 processes 4 f64 in 256-bit register)
-    let simd_chunks = (data.len().min(n_qubits) / 4) * 4;
+    let data_len = data.len().min(n_qubits);
+    let simd_chunks = (data_len / 4) * 4;
     let mut i = 0;
 
     // Main SIMD loop: process 4 doubles per iteration
-    while i + 4 <= simd_chunks {
+    while i < simd_chunks {
         // Load 4 doubles from input
         let input = _mm256_loadu_pd(data.as_ptr().add(i));
 
@@ -258,8 +212,8 @@ pub unsafe fn angle_encode_avx2(data: &[f64], n_qubits: usize) -> Vec<f64> {
         i += 4;
     }
 
-    // Handle remainder elements
-    while i < data.len().min(n_qubits) {
+    // Handle remainder elements (0-3 elements)
+    while i < data_len {
         result.push(data[i] * 2.0 * PI);
         i += 1;
     }
@@ -285,7 +239,180 @@ fn angle_encode_scalar(data: &[f64], n_qubits: usize) -> Vec<f64> {
     result
 }
 
-/// SIMD-optimized angle encoding with memory optimization and platform-specific intrinsics
+/// SIMD-optimized angle encoding with direct buffer writing (zero-allocation)
+/// 
+/// Optimized for batch processing - writes directly to pre-allocated buffer
+/// Includes memory alignment and prefetching optimizations for x86
+#[must_use]
+pub fn simd_angle_encode_into_buffer(data: &[f64], output: &mut [f64]) {
+    let n_qubits = output.len();
+    const SMALL_SIZE: usize = 32;
+
+    // Fast path: Stack allocation for small data
+    if n_qubits <= SMALL_SIZE {
+        let two_pi = 2.0 * PI;
+        let len = data.len().min(n_qubits);
+        
+        // Direct write to output buffer
+        for i in 0..len {
+            output[i] = data[i] * two_pi;
+        }
+        // Zero-fill remainder
+        for i in len..n_qubits {
+            output[i] = 0.0;
+        }
+        return;
+    }
+
+    // Medium path: Platform-specific SIMD with direct buffer writes
+    #[cfg(target_arch = "x86_64")]
+    {
+        // Prefetch data for better cache performance
+        if data.len() >= 64 {
+            unsafe {
+                // Prefetch first cache line
+                std::arch::x86_64::_mm_prefetch(
+                    data.as_ptr() as *const i8, 
+                    std::arch::x86_64::_MM_HINT_T0
+                );
+                // Prefetch output buffer
+                std::arch::x86_64::_mm_prefetch(
+                    output.as_ptr() as *const i8, 
+                    std::arch::x86_64::_MM_HINT_T0
+                );
+            }
+        }
+
+        if data.len() >= 4 && n_qubits >= 4 {
+            if is_x86_feature_detected!("avx512f") {
+                unsafe { return angle_encode_avx512_into_buffer(data, output); }
+            }
+            if is_x86_feature_detected!("avx2") {
+                unsafe { return angle_encode_avx2_into_buffer(data, output); }
+            }
+        }
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    {
+        if data.len() >= 2 && n_qubits >= 2 {
+            unsafe { return angle_encode_neon_into_buffer(data, output); }
+        }
+    }
+
+    // Fallback: scalar with direct buffer writes
+    let _ = angle_encode_scalar_into_buffer(data, output);
+}
+
+/// AVX-512 optimized angle encoding with direct buffer writing
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+pub unsafe fn angle_encode_avx512_into_buffer(data: &[f64], output: &mut [f64]) {
+    let n_qubits = output.len();
+    let two_pi_vec = _mm512_set1_pd(2.0 * PI);
+    
+    let data_len = data.len().min(n_qubits);
+    let simd_chunks = (data_len / 8) * 8;
+    let mut i = 0;
+
+    // Main SIMD loop: process 8 doubles per iteration, write directly to buffer
+    while i < simd_chunks {
+        let input = _mm512_loadu_pd(data.as_ptr().add(i));
+        let result = _mm512_mul_pd(input, two_pi_vec);
+        _mm512_storeu_pd(output.as_mut_ptr().add(i), result);
+        i += 8;
+    }
+
+    // Handle remainder elements
+    while i < data_len {
+        output[i] = data[i] * 2.0 * PI;
+        i += 1;
+    }
+
+    // Zero-fill remainder
+    while i < n_qubits {
+        output[i] = 0.0;
+        i += 1;
+    }
+}
+
+/// AVX2 optimized angle encoding with direct buffer writing
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn angle_encode_avx2_into_buffer(data: &[f64], output: &mut [f64]) {
+    let n_qubits = output.len();
+    let two_pi_vec = _mm256_set1_pd(2.0 * PI);
+    
+    let data_len = data.len().min(n_qubits);
+    let simd_chunks = (data_len / 4) * 4;
+    let mut i = 0;
+
+    // Main SIMD loop: process 4 doubles per iteration, write directly to buffer
+    while i < simd_chunks {
+        let input = _mm256_loadu_pd(data.as_ptr().add(i));
+        let result = _mm256_mul_pd(input, two_pi_vec);
+        _mm256_storeu_pd(output.as_mut_ptr().add(i), result);
+        i += 4;
+    }
+
+    // Handle remainder elements
+    while i < data_len {
+        output[i] = data[i] * 2.0 * PI;
+        i += 1;
+    }
+
+    // Zero-fill remainder
+    while i < n_qubits {
+        output[i] = 0.0;
+        i += 1;
+    }
+}
+
+/// NEON optimized angle encoding with direct buffer writing
+#[cfg(target_arch = "aarch64")]
+#[target_feature(enable = "neon")]
+pub unsafe fn angle_encode_neon_into_buffer(data: &[f64], output: &mut [f64]) {
+    let n_qubits = output.len();
+    let two_pi_vec = vdupq_n_f64(2.0 * PI);
+    
+    let data_len = data.len().min(n_qubits);
+    let simd_chunks = (data_len / 2) * 2;
+    let mut i = 0;
+
+    // Main SIMD loop: process 2 doubles per iteration, write directly to buffer
+    while i < simd_chunks {
+        let input = vld1q_f64(data.as_ptr().add(i));
+        let result = vmulq_f64(input, two_pi_vec);
+        vst1q_f64(output.as_mut_ptr().add(i), result);
+        i += 2;
+    }
+
+    // Handle remainder elements
+    while i < data_len {
+        output[i] = data[i] * 2.0 * PI;
+        i += 1;
+    }
+
+    // Zero-fill remainder
+    while i < n_qubits {
+        output[i] = 0.0;
+        i += 1;
+    }
+}
+#[must_use]
+fn angle_encode_scalar_into_buffer(data: &[f64], output: &mut [f64]) {
+    let n_qubits = output.len();
+    let two_pi = 2.0 * PI;
+    let len = data.len().min(n_qubits);
+    
+    for i in 0..len {
+        output[i] = data[i] * two_pi;
+    }
+    // Zero-fill remainder
+    for i in len..n_qubits {
+        output[i] = 0.0;
+    }
+}
 ///
 /// Multi-tier optimization strategy:
 /// 1. Fast: Stack allocation for small data (n_qubits <= 32)
