@@ -7,6 +7,10 @@ use std::f64::consts::PI;
 #[cfg(target_arch = "aarch64")]
 use std::arch::aarch64::*;
 
+// AVX intrinsics for x86_64
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+
 // Rayon for parallel processing
 use rayon::prelude::*;
 
@@ -144,7 +148,7 @@ fn angle_encode_batch_sequential<'py>(
 /// Processes 2 doubles per iteration (128-bit SIMD width)
 #[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "neon")]
-unsafe fn angle_encode_neon(data: &[f64], n_qubits: usize) -> Vec<f64> {
+pub unsafe fn angle_encode_neon(data: &[f64], n_qubits: usize) -> Vec<f64> {
     // SAFETY: Caller must ensure NEON is supported (checked via is_arm_feature_detected!)
     // We maintain bounds checking and only use intrinsics within safe bounds
 
@@ -184,6 +188,88 @@ unsafe fn angle_encode_neon(data: &[f64], n_qubits: usize) -> Vec<f64> {
     result
 }
 
+/// AVX-512 optimized angle encoding for x86_64
+/// Processes 8 doubles per iteration (512-bit SIMD width)
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+pub unsafe fn angle_encode_avx512(data: &[f64], n_qubits: usize) -> Vec<f64> {
+    // SAFETY: Caller must ensure AVX-512 is supported (checked via is_x86_feature_detected!)
+    let two_pi_vec = _mm512_set1_pd(2.0 * PI);
+    let mut result = Vec::with_capacity(n_qubits);
+
+    // Process 8 doubles at a time (AVX-512 processes 8 f64 in 512-bit register)
+    let simd_chunks = (data.len().min(n_qubits) / 8) * 8;
+    let mut i = 0;
+
+    // Main SIMD loop: process 8 doubles per iteration
+    while i + 8 <= simd_chunks {
+        // Load 8 doubles from input
+        let input = _mm512_loadu_pd(data.as_ptr().add(i));
+
+        // Vectorized multiply: output = input * 2π (8 operations in parallel!)
+        let output = _mm512_mul_pd(input, two_pi_vec);
+
+        // Store 8 doubles to temporary array, then extend result
+        let mut temp = [0.0f64; 8];
+        _mm512_storeu_pd(temp.as_mut_ptr(), output);
+        result.extend_from_slice(&temp);
+
+        i += 8;
+    }
+
+    // Handle remainder elements
+    while i < data.len().min(n_qubits) {
+        result.push(data[i] * 2.0 * PI);
+        i += 1;
+    }
+
+    // Pad with zeros if needed
+    result.resize(n_qubits, 0.0);
+
+    result
+}
+
+/// AVX2 optimized angle encoding for x86_64
+/// Processes 4 doubles per iteration (256-bit SIMD width)
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn angle_encode_avx2(data: &[f64], n_qubits: usize) -> Vec<f64> {
+    // SAFETY: Caller must ensure AVX2 is supported (checked via is_x86_feature_detected!)
+    let two_pi_vec = _mm256_set1_pd(2.0 * PI);
+    let mut result = Vec::with_capacity(n_qubits);
+
+    // Process 4 doubles at a time (AVX2 processes 4 f64 in 256-bit register)
+    let simd_chunks = (data.len().min(n_qubits) / 4) * 4;
+    let mut i = 0;
+
+    // Main SIMD loop: process 4 doubles per iteration
+    while i + 4 <= simd_chunks {
+        // Load 4 doubles from input
+        let input = _mm256_loadu_pd(data.as_ptr().add(i));
+
+        // Vectorized multiply: output = input * 2π (4 operations in parallel!)
+        let output = _mm256_mul_pd(input, two_pi_vec);
+
+        // Store 4 doubles to temporary array, then extend result
+        let mut temp = [0.0f64; 4];
+        _mm256_storeu_pd(temp.as_mut_ptr(), output);
+        result.extend_from_slice(&temp);
+
+        i += 4;
+    }
+
+    // Handle remainder elements
+    while i < data.len().min(n_qubits) {
+        result.push(data[i] * 2.0 * PI);
+        i += 1;
+    }
+
+    // Pad with zeros if needed
+    result.resize(n_qubits, 0.0);
+
+    result
+}
+
 /// Scalar fallback for platforms without NEON or for validation
 #[must_use]
 fn angle_encode_scalar(data: &[f64], n_qubits: usize) -> Vec<f64> {
@@ -199,12 +285,14 @@ fn angle_encode_scalar(data: &[f64], n_qubits: usize) -> Vec<f64> {
     result
 }
 
-/// SIMD-optimized angle encoding with memory optimization and NEON intrinsics
+/// SIMD-optimized angle encoding with memory optimization and platform-specific intrinsics
 ///
-/// Three-tier optimization strategy:
+/// Multi-tier optimization strategy:
 /// 1. Fast: Stack allocation for small data (n_qubits <= 32)
-/// 2. Medium: NEON SIMD for ARM64 when data has enough elements
-/// 3. Slow: Scalar fallback for compatibility
+/// 2. Medium-x86: AVX-512 SIMD for x86_64 when available (8 doubles/iter)
+/// 3. Medium-x86: AVX2 SIMD for x86_64 when available (4 doubles/iter)
+/// 4. Medium-arm: NEON SIMD for ARM64 when available (2 doubles/iter)
+/// 5. Slow: Scalar fallback for compatibility
 #[must_use]
 pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
     const SMALL_SIZE: usize = 32; // 256 bytes (fits in stack)
@@ -224,8 +312,26 @@ pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
         return result[0..n_qubits].to_vec();
     }
 
-    // Medium path: NEON SIMD for ARM64 (Phase 2B optimization)
-    // Note: All ARM64 Apple Silicon has NEON support, so we use it directly
+    // Medium path: Platform-specific SIMD (Phase 2B optimization)
+
+    // x86_64 path: AVX-512 -> AVX2 -> scalar
+    #[cfg(target_arch = "x86_64")]
+    {
+        // Only use SIMD if we have enough elements
+        if data.len() >= 4 && n_qubits >= 4 {
+            // Try AVX-512 first (best performance - 8 doubles at once)
+            if is_x86_feature_detected!("avx512f") {
+                unsafe { return angle_encode_avx512(data, n_qubits); }
+            }
+
+            // Fall back to AVX2 (good performance - 4 doubles at once)
+            if is_x86_feature_detected!("avx2") {
+                unsafe { return angle_encode_avx2(data, n_qubits); }
+            }
+        }
+    }
+
+    // ARM64 path: NEON SIMD
     #[cfg(target_arch = "aarch64")]
     {
         // Only use NEON if we have at least 2 elements (NEON processes 2 at a time)
@@ -235,7 +341,7 @@ pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
         }
     }
 
-    // Slow path: Scalar fallback for large data or no NEON support
+    // Slow path: Scalar fallback for large data or no SIMD support
     angle_encode_scalar(data, n_qubits)
 }
 

@@ -1,0 +1,542 @@
+   Compiling simd_angle_encoder v0.1.0 (/var/tmp/vibe-kanban-dev/worktrees/ac67-in-depth-compari/simd-angle-encoder)
+    Finished `bench` profile [optimized + debuginfo] target(s) in 32.13s
+     Running benchmarks/rust/simd_comparison.rs (target/release/deps/simd_comparison-a1a759c21c6baa80)
+Gnuplot not found, using plotters backend
+Benchmarking simd_comparison_all_sizes/scalar/8
+Benchmarking simd_comparison_all_sizes/scalar/8: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/8: Collecting 100 samples in estimated 10.000 s (491M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/8: Analyzing
+simd_comparison_all_sizes/scalar/8
+                        time:   [20.837 ns 21.827 ns 23.074 ns]
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) low severe
+  2 (2.00%) low mild
+  2 (2.00%) high mild
+  5 (5.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/8
+Benchmarking simd_comparison_all_sizes/avx2/8: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/8: Collecting 100 samples in estimated 10.000 s (490M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/8: Analyzing
+simd_comparison_all_sizes/avx2/8
+                        time:   [21.298 ns 21.930 ns 22.755 ns]
+Found 12 outliers among 100 measurements (12.00%)
+  1 (1.00%) high mild
+  11 (11.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx512/8
+Benchmarking simd_comparison_all_sizes/avx512/8: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/8: Collecting 100 samples in estimated 10.000 s (485M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/8: Analyzing
+simd_comparison_all_sizes/avx512/8
+                        time:   [21.309 ns 21.785 ns 22.418 ns]
+Found 16 outliers among 100 measurements (16.00%)
+  1 (1.00%) low mild
+  4 (4.00%) high mild
+  11 (11.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/8
+Benchmarking simd_comparison_all_sizes/optimized/8: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/8: Collecting 100 samples in estimated 10.000 s (667M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/8: Analyzing
+simd_comparison_all_sizes/optimized/8
+                        time:   [15.310 ns 15.830 ns 16.584 ns]
+Found 11 outliers among 100 measurements (11.00%)
+  3 (3.00%) low mild
+  1 (1.00%) high mild
+  7 (7.00%) high severe
+Benchmarking simd_comparison_all_sizes/scalar/16
+Benchmarking simd_comparison_all_sizes/scalar/16: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/16: Collecting 100 samples in estimated 10.000 s (405M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/16: Analyzing
+simd_comparison_all_sizes/scalar/16
+                        time:   [23.945 ns 24.986 ns 26.345 ns]
+Found 6 outliers among 100 measurements (6.00%)
+  1 (1.00%) low mild
+  5 (5.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/16
+Benchmarking simd_comparison_all_sizes/avx2/16: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/16: Collecting 100 samples in estimated 10.000 s (476M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/16: Analyzing
+simd_comparison_all_sizes/avx2/16
+                        time:   [21.379 ns 22.014 ns 22.887 ns]
+Found 7 outliers among 100 measurements (7.00%)
+  1 (1.00%) high mild
+  6 (6.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx512/16
+Benchmarking simd_comparison_all_sizes/avx512/16: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/16: Collecting 100 samples in estimated 10.000 s (462M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/16: Analyzing
+simd_comparison_all_sizes/avx512/16
+                        time:   [23.502 ns 23.977 ns 24.583 ns]
+Found 9 outliers among 100 measurements (9.00%)
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+  7 (7.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/16
+Benchmarking simd_comparison_all_sizes/optimized/16: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/16: Collecting 100 samples in estimated 10.000 s (615M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/16: Analyzing
+simd_comparison_all_sizes/optimized/16
+                        time:   [16.417 ns 16.955 ns 17.691 ns]
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+  7 (7.00%) high severe
+Benchmarking simd_comparison_all_sizes/scalar/32
+Benchmarking simd_comparison_all_sizes/scalar/32: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/32: Collecting 100 samples in estimated 10.000 s (254M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/32: Analyzing
+simd_comparison_all_sizes/scalar/32
+                        time:   [37.135 ns 37.852 ns 38.826 ns]
+Found 12 outliers among 100 measurements (12.00%)
+  3 (3.00%) high mild
+  9 (9.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/32
+Benchmarking simd_comparison_all_sizes/avx2/32: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/32: Collecting 100 samples in estimated 10.000 s (470M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/32: Analyzing
+simd_comparison_all_sizes/avx2/32
+                        time:   [23.313 ns 23.564 ns 23.919 ns]
+Found 13 outliers among 100 measurements (13.00%)
+  2 (2.00%) high mild
+  11 (11.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx512/32
+Benchmarking simd_comparison_all_sizes/avx512/32: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/32: Collecting 100 samples in estimated 10.000 s (383M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/32: Analyzing
+simd_comparison_all_sizes/avx512/32
+                        time:   [30.372 ns 30.573 ns 30.846 ns]
+Found 22 outliers among 100 measurements (22.00%)
+  2 (2.00%) high mild
+  20 (20.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/32
+Benchmarking simd_comparison_all_sizes/optimized/32: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/32: Collecting 100 samples in estimated 10.000 s (395M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/32: Analyzing
+simd_comparison_all_sizes/optimized/32
+                        time:   [19.050 ns 19.361 ns 19.781 ns]
+Found 14 outliers among 100 measurements (14.00%)
+  1 (1.00%) high mild
+  13 (13.00%) high severe
+Benchmarking simd_comparison_all_sizes/scalar/64
+Benchmarking simd_comparison_all_sizes/scalar/64: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/64: Collecting 100 samples in estimated 10.000 s (150M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/64: Analyzing
+simd_comparison_all_sizes/scalar/64
+                        time:   [63.804 ns 66.089 ns 69.139 ns]
+Found 12 outliers among 100 measurements (12.00%)
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+  10 (10.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/64
+Benchmarking simd_comparison_all_sizes/avx2/64: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/64: Collecting 100 samples in estimated 10.000 s (354M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/64: Analyzing
+simd_comparison_all_sizes/avx2/64
+                        time:   [32.696 ns 33.695 ns 35.037 ns]
+Found 8 outliers among 100 measurements (8.00%)
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx512/64
+Benchmarking simd_comparison_all_sizes/avx512/64: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/64: Collecting 100 samples in estimated 10.000 s (290M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/64: Analyzing
+simd_comparison_all_sizes/avx512/64
+                        time:   [41.773 ns 42.138 ns 42.635 ns]
+Found 10 outliers among 100 measurements (10.00%)
+  10 (10.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/64
+Benchmarking simd_comparison_all_sizes/optimized/64: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/64: Collecting 100 samples in estimated 10.000 s (272M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/64: Analyzing
+simd_comparison_all_sizes/optimized/64
+                        time:   [39.732 ns 40.032 ns 40.447 ns]
+Found 16 outliers among 100 measurements (16.00%)
+  4 (4.00%) high mild
+  12 (12.00%) high severe
+Benchmarking simd_comparison_all_sizes/scalar/128
+Benchmarking simd_comparison_all_sizes/scalar/128: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/128: Collecting 100 samples in estimated 10.000 s (82M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/128: Analyzing
+simd_comparison_all_sizes/scalar/128
+                        time:   [118.56 ns 118.59 ns 118.62 ns]
+Found 14 outliers among 100 measurements (14.00%)
+  1 (1.00%) low severe
+  1 (1.00%) low mild
+  5 (5.00%) high mild
+  7 (7.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/128
+Benchmarking simd_comparison_all_sizes/avx2/128: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/128: Collecting 100 samples in estimated 10.000 s (240M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/128: Analyzing
+simd_comparison_all_sizes/avx2/128
+                        time:   [53.503 ns 53.520 ns 53.537 ns]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) low mild
+Benchmarking simd_comparison_all_sizes/avx512/128
+Benchmarking simd_comparison_all_sizes/avx512/128: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/128: Collecting 100 samples in estimated 10.000 s (207M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/128: Analyzing
+simd_comparison_all_sizes/avx512/128
+                        time:   [61.113 ns 61.122 ns 61.132 ns]
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+  3 (3.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/128
+Benchmarking simd_comparison_all_sizes/optimized/128: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/128: Collecting 100 samples in estimated 10.000 s (196M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/128: Analyzing
+simd_comparison_all_sizes/optimized/128
+                        time:   [59.916 ns 59.923 ns 59.930 ns]
+Found 6 outliers among 100 measurements (6.00%)
+  1 (1.00%) low severe
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+Benchmarking simd_comparison_all_sizes/scalar/256
+Benchmarking simd_comparison_all_sizes/scalar/256: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/256: Collecting 100 samples in estimated 10.001 s (36M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/256: Analyzing
+simd_comparison_all_sizes/scalar/256
+                        time:   [271.43 ns 271.49 ns 271.55 ns]
+Found 13 outliers among 100 measurements (13.00%)
+  1 (1.00%) low severe
+  6 (6.00%) high mild
+  6 (6.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/256
+Benchmarking simd_comparison_all_sizes/avx2/256: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/256: Collecting 100 samples in estimated 10.000 s (91M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/256: Analyzing
+simd_comparison_all_sizes/avx2/256
+                        time:   [141.43 ns 141.45 ns 141.48 ns]
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) low severe
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx512/256
+Benchmarking simd_comparison_all_sizes/avx512/256: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/256: Collecting 100 samples in estimated 10.000 s (70M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/256: Analyzing
+simd_comparison_all_sizes/avx512/256
+                        time:   [156.92 ns 156.99 ns 157.06 ns]
+Found 13 outliers among 100 measurements (13.00%)
+  1 (1.00%) low severe
+  4 (4.00%) high mild
+  8 (8.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/256
+Benchmarking simd_comparison_all_sizes/optimized/256: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/256: Collecting 100 samples in estimated 10.000 s (69M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/256: Analyzing
+simd_comparison_all_sizes/optimized/256
+                        time:   [160.13 ns 160.15 ns 160.18 ns]
+Found 13 outliers among 100 measurements (13.00%)
+  1 (1.00%) low severe
+  3 (3.00%) low mild
+  4 (4.00%) high mild
+  5 (5.00%) high severe
+Benchmarking simd_comparison_all_sizes/scalar/512
+Benchmarking simd_comparison_all_sizes/scalar/512: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/512: Collecting 100 samples in estimated 10.001 s (20M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/512: Analyzing
+simd_comparison_all_sizes/scalar/512
+                        time:   [494.90 ns 494.95 ns 495.00 ns]
+Found 11 outliers among 100 measurements (11.00%)
+  4 (4.00%) high mild
+  7 (7.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/512
+Benchmarking simd_comparison_all_sizes/avx2/512: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/512: Collecting 100 samples in estimated 10.000 s (50M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/512: Analyzing
+simd_comparison_all_sizes/avx2/512
+                        time:   [267.30 ns 267.35 ns 267.42 ns]
+Found 14 outliers among 100 measurements (14.00%)
+  4 (4.00%) high mild
+  10 (10.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx512/512
+Benchmarking simd_comparison_all_sizes/avx512/512: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/512: Collecting 100 samples in estimated 10.001 s (54M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/512: Analyzing
+simd_comparison_all_sizes/avx512/512
+                        time:   [230.85 ns 230.90 ns 230.97 ns]
+Found 11 outliers among 100 measurements (11.00%)
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+  9 (9.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/512
+Benchmarking simd_comparison_all_sizes/optimized/512: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/512: Collecting 100 samples in estimated 10.001 s (46M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/512: Analyzing
+simd_comparison_all_sizes/optimized/512
+                        time:   [269.40 ns 269.45 ns 269.51 ns]
+Found 10 outliers among 100 measurements (10.00%)
+  5 (5.00%) high mild
+  5 (5.00%) high severe
+Benchmarking simd_comparison_all_sizes/scalar/1024
+Benchmarking simd_comparison_all_sizes/scalar/1024: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/1024: Collecting 100 samples in estimated 10.002 s (11M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/1024: Analyzing
+simd_comparison_all_sizes/scalar/1024
+                        time:   [944.27 ns 945.48 ns 947.38 ns]
+Found 18 outliers among 100 measurements (18.00%)
+  1 (1.00%) low mild
+  6 (6.00%) high mild
+  11 (11.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/1024
+Benchmarking simd_comparison_all_sizes/avx2/1024: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/1024: Collecting 100 samples in estimated 10.001 s (35M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/1024: Analyzing
+simd_comparison_all_sizes/avx2/1024
+                        time:   [424.57 ns 430.87 ns 439.28 ns]
+Found 23 outliers among 100 measurements (23.00%)
+  2 (2.00%) high mild
+  21 (21.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx512/1024
+Benchmarking simd_comparison_all_sizes/avx512/1024: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/1024: Collecting 100 samples in estimated 10.002 s (26M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/1024: Analyzing
+simd_comparison_all_sizes/avx512/1024
+                        time:   [447.70 ns 447.74 ns 447.79 ns]
+Found 12 outliers among 100 measurements (12.00%)
+  1 (1.00%) low severe
+  7 (7.00%) high mild
+  4 (4.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/1024
+Benchmarking simd_comparison_all_sizes/optimized/1024: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/1024: Collecting 100 samples in estimated 10.001 s (26M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/1024: Analyzing
+simd_comparison_all_sizes/optimized/1024
+                        time:   [448.45 ns 448.47 ns 448.49 ns]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high severe
+Benchmarking simd_comparison_all_sizes/scalar/2048
+Benchmarking simd_comparison_all_sizes/scalar/2048: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/2048: Collecting 100 samples in estimated 10.000 s (5.4M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/2048: Analyzing
+simd_comparison_all_sizes/scalar/2048
+                        time:   [1.8498 µs 1.8499 µs 1.8500 µs]
+Found 10 outliers among 100 measurements (10.00%)
+  2 (2.00%) low severe
+  1 (1.00%) low mild
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/2048
+Benchmarking simd_comparison_all_sizes/avx2/2048: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/2048: Collecting 100 samples in estimated 10.001 s (19M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/2048: Analyzing
+simd_comparison_all_sizes/avx2/2048
+                        time:   [792.16 ns 792.45 ns 792.71 ns]
+Benchmarking simd_comparison_all_sizes/avx512/2048
+Benchmarking simd_comparison_all_sizes/avx512/2048: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/2048: Collecting 100 samples in estimated 10.001 s (14M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/2048: Analyzing
+simd_comparison_all_sizes/avx512/2048
+                        time:   [876.46 ns 876.81 ns 877.16 ns]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) low mild
+Benchmarking simd_comparison_all_sizes/optimized/2048
+Benchmarking simd_comparison_all_sizes/optimized/2048: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/2048: Collecting 100 samples in estimated 10.000 s (14M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/2048: Analyzing
+simd_comparison_all_sizes/optimized/2048
+                        time:   [877.81 ns 877.91 ns 878.01 ns]
+Found 4 outliers among 100 measurements (4.00%)
+  1 (1.00%) low severe
+  2 (2.00%) low mild
+  1 (1.00%) high mild
+Benchmarking simd_comparison_all_sizes/scalar/4096
+Benchmarking simd_comparison_all_sizes/scalar/4096: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/scalar/4096: Collecting 100 samples in estimated 10.021 s (2.0M iterations)
+Benchmarking simd_comparison_all_sizes/scalar/4096: Analyzing
+simd_comparison_all_sizes/scalar/4096
+                        time:   [4.0217 µs 4.0259 µs 4.0321 µs]
+Found 24 outliers among 100 measurements (24.00%)
+  1 (1.00%) low severe
+  7 (7.00%) low mild
+  4 (4.00%) high mild
+  12 (12.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx2/4096
+Benchmarking simd_comparison_all_sizes/avx2/4096: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx2/4096: Collecting 100 samples in estimated 10.000 s (5.8M iterations)
+Benchmarking simd_comparison_all_sizes/avx2/4096: Analyzing
+simd_comparison_all_sizes/avx2/4096
+                        time:   [2.3632 µs 2.3656 µs 2.3691 µs]
+Found 7 outliers among 100 measurements (7.00%)
+  3 (3.00%) low mild
+  1 (1.00%) high mild
+  3 (3.00%) high severe
+Benchmarking simd_comparison_all_sizes/avx512/4096
+Benchmarking simd_comparison_all_sizes/avx512/4096: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/avx512/4096: Collecting 100 samples in estimated 10.004 s (4.5M iterations)
+Benchmarking simd_comparison_all_sizes/avx512/4096: Analyzing
+simd_comparison_all_sizes/avx512/4096
+                        time:   [2.2399 µs 2.2405 µs 2.2412 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  1 (1.00%) high mild
+  3 (3.00%) high severe
+Benchmarking simd_comparison_all_sizes/optimized/4096
+Benchmarking simd_comparison_all_sizes/optimized/4096: Warming up for 3.0000 s
+Benchmarking simd_comparison_all_sizes/optimized/4096: Collecting 100 samples in estimated 10.005 s (4.5M iterations)
+Benchmarking simd_comparison_all_sizes/optimized/4096: Analyzing
+simd_comparison_all_sizes/optimized/4096
+                        time:   [2.2412 µs 2.2416 µs 2.2420 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+  3 (3.00%) high severe
+
+Benchmarking simd_throughput/scalar/64
+Benchmarking simd_throughput/scalar/64: Warming up for 3.0000 s
+Benchmarking simd_throughput/scalar/64: Collecting 100 samples in estimated 10.000 s (150M iterations)
+Benchmarking simd_throughput/scalar/64: Analyzing
+simd_throughput/scalar/64
+                        time:   [63.140 ns 63.163 ns 63.189 ns]
+                        thrpt:  [1.0128 Gelem/s 1.0132 Gelem/s 1.0136 Gelem/s]
+Found 15 outliers among 100 measurements (15.00%)
+  1 (1.00%) low mild
+  7 (7.00%) high mild
+  7 (7.00%) high severe
+Benchmarking simd_throughput/avx2/64
+Benchmarking simd_throughput/avx2/64: Warming up for 3.0000 s
+Benchmarking simd_throughput/avx2/64: Collecting 100 samples in estimated 10.000 s (354M iterations)
+Benchmarking simd_throughput/avx2/64: Analyzing
+simd_throughput/avx2/64 time:   [32.443 ns 32.459 ns 32.477 ns]
+                        thrpt:  [1.9706 Gelem/s 1.9717 Gelem/s 1.9727 Gelem/s]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high severe
+Benchmarking simd_throughput/avx512/64
+Benchmarking simd_throughput/avx512/64: Warming up for 3.0000 s
+Benchmarking simd_throughput/avx512/64: Collecting 100 samples in estimated 10.000 s (290M iterations)
+Benchmarking simd_throughput/avx512/64: Analyzing
+simd_throughput/avx512/64
+                        time:   [41.752 ns 41.757 ns 41.762 ns]
+                        thrpt:  [1.5325 Gelem/s 1.5327 Gelem/s 1.5329 Gelem/s]
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) low severe
+  1 (1.00%) high mild
+Benchmarking simd_throughput/optimized/64
+Benchmarking simd_throughput/optimized/64: Warming up for 3.0000 s
+Benchmarking simd_throughput/optimized/64: Collecting 100 samples in estimated 10.000 s (272M iterations)
+Benchmarking simd_throughput/optimized/64: Analyzing
+simd_throughput/optimized/64
+                        time:   [39.796 ns 39.871 ns 39.973 ns]
+                        thrpt:  [1.6011 Gelem/s 1.6052 Gelem/s 1.6082 Gelem/s]
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) low severe
+  3 (3.00%) low mild
+  6 (6.00%) high severe
+Benchmarking simd_throughput/scalar/256
+Benchmarking simd_throughput/scalar/256: Warming up for 3.0000 s
+Benchmarking simd_throughput/scalar/256: Collecting 100 samples in estimated 10.001 s (36M iterations)
+Benchmarking simd_throughput/scalar/256: Analyzing
+simd_throughput/scalar/256
+                        time:   [272.20 ns 272.25 ns 272.31 ns]
+                        thrpt:  [940.12 Melem/s 940.32 Melem/s 940.48 Melem/s]
+Found 11 outliers among 100 measurements (11.00%)
+  1 (1.00%) low severe
+  4 (4.00%) high mild
+  6 (6.00%) high severe
+Benchmarking simd_throughput/avx2/256
+Benchmarking simd_throughput/avx2/256: Warming up for 3.0000 s
+Benchmarking simd_throughput/avx2/256: Collecting 100 samples in estimated 10.000 s (87M iterations)
+Benchmarking simd_throughput/avx2/256: Analyzing
+simd_throughput/avx2/256
+                        time:   [146.01 ns 146.06 ns 146.13 ns]
+                        thrpt:  [1.7518 Gelem/s 1.7527 Gelem/s 1.7534 Gelem/s]
+Found 14 outliers among 100 measurements (14.00%)
+  2 (2.00%) high mild
+  12 (12.00%) high severe
+Benchmarking simd_throughput/avx512/256
+Benchmarking simd_throughput/avx512/256: Warming up for 3.0000 s
+Benchmarking simd_throughput/avx512/256: Collecting 100 samples in estimated 10.000 s (82M iterations)
+Benchmarking simd_throughput/avx512/256: Analyzing
+simd_throughput/avx512/256
+                        time:   [144.63 ns 145.21 ns 146.45 ns]
+                        thrpt:  [1.7480 Gelem/s 1.7629 Gelem/s 1.7700 Gelem/s]
+Found 9 outliers among 100 measurements (9.00%)
+  4 (4.00%) high mild
+  5 (5.00%) high severe
+Benchmarking simd_throughput/optimized/256
+Benchmarking simd_throughput/optimized/256: Warming up for 3.0000 s
+Benchmarking simd_throughput/optimized/256: Collecting 100 samples in estimated 10.001 s (56M iterations)
+Benchmarking simd_throughput/optimized/256: Analyzing
+simd_throughput/optimized/256
+                        time:   [141.04 ns 141.08 ns 141.12 ns]
+                        thrpt:  [1.8141 Gelem/s 1.8146 Gelem/s 1.8150 Gelem/s]
+Found 11 outliers among 100 measurements (11.00%)
+  3 (3.00%) high mild
+  8 (8.00%) high severe
+Benchmarking simd_throughput/scalar/1024
+Benchmarking simd_throughput/scalar/1024: Warming up for 3.0000 s
+Benchmarking simd_throughput/scalar/1024: Collecting 100 samples in estimated 10.004 s (10M iterations)
+Benchmarking simd_throughput/scalar/1024: Analyzing
+simd_throughput/scalar/1024
+                        time:   [949.75 ns 949.97 ns 950.22 ns]
+                        thrpt:  [1.0776 Gelem/s 1.0779 Gelem/s 1.0782 Gelem/s]
+Found 12 outliers among 100 measurements (12.00%)
+  1 (1.00%) low severe
+  3 (3.00%) high mild
+  8 (8.00%) high severe
+Benchmarking simd_throughput/avx2/1024
+Benchmarking simd_throughput/avx2/1024: Warming up for 3.0000 s
+Benchmarking simd_throughput/avx2/1024: Collecting 100 samples in estimated 10.001 s (28M iterations)
+Benchmarking simd_throughput/avx2/1024: Analyzing
+simd_throughput/avx2/1024
+                        time:   [494.98 ns 495.06 ns 495.13 ns]
+                        thrpt:  [2.0681 Gelem/s 2.0684 Gelem/s 2.0688 Gelem/s]
+Found 6 outliers among 100 measurements (6.00%)
+  1 (1.00%) high mild
+  5 (5.00%) high severe
+Benchmarking simd_throughput/avx512/1024
+Benchmarking simd_throughput/avx512/1024: Warming up for 3.0000 s
+Benchmarking simd_throughput/avx512/1024: Collecting 100 samples in estimated 10.001 s (23M iterations)
+Benchmarking simd_throughput/avx512/1024: Analyzing
+simd_throughput/avx512/1024
+                        time:   [535.18 ns 535.86 ns 537.04 ns]
+                        thrpt:  [1.9068 Gelem/s 1.9109 Gelem/s 1.9134 Gelem/s]
+Found 12 outliers among 100 measurements (12.00%)
+  6 (6.00%) high mild
+  6 (6.00%) high severe
+Benchmarking simd_throughput/optimized/1024
+Benchmarking simd_throughput/optimized/1024: Warming up for 3.0000 s
+Benchmarking simd_throughput/optimized/1024: Collecting 100 samples in estimated 10.001 s (23M iterations)
+Benchmarking simd_throughput/optimized/1024: Analyzing
+simd_throughput/optimized/1024
+                        time:   [534.46 ns 534.53 ns 534.59 ns]
+                        thrpt:  [1.9155 Gelem/s 1.9157 Gelem/s 1.9159 Gelem/s]
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) low severe
+  2 (2.00%) low mild
+  2 (2.00%) high mild
+Benchmarking simd_throughput/scalar/4096
+Benchmarking simd_throughput/scalar/4096: Warming up for 3.0000 s
+Benchmarking simd_throughput/scalar/4096: Collecting 100 samples in estimated 10.013 s (2.0M iterations)
+Benchmarking simd_throughput/scalar/4096: Analyzing
+simd_throughput/scalar/4096
+                        time:   [4.0193 µs 4.0206 µs 4.0222 µs]
+                        thrpt:  [1.0184 Gelem/s 1.0188 Gelem/s 1.0191 Gelem/s]
+Found 14 outliers among 100 measurements (14.00%)
+  7 (7.00%) high mild
+  7 (7.00%) high severe
+Benchmarking simd_throughput/avx2/4096
+Benchmarking simd_throughput/avx2/4096: Warming up for 3.0000 s
+Benchmarking simd_throughput/avx2/4096: Collecting 100 samples in estimated 10.005 s (5.8M iterations)
+Benchmarking simd_throughput/avx2/4096: Analyzing
+simd_throughput/avx2/4096
+                        time:   [2.3616 µs 2.3644 µs 2.3676 µs]
+                        thrpt:  [1.7300 Gelem/s 1.7324 Gelem/s 1.7344 Gelem/s]
+Found 15 outliers among 100 measurements (15.00%)
+  6 (6.00%) low mild
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+Benchmarking simd_throughput/avx512/4096
+Benchmarking simd_throughput/avx512/4096: Warming up for 3.0000 s
+Benchmarking simd_throughput/avx512/4096: Collecting 100 samples in estimated 10.001 s (4.5M iterations)
+Benchmarking simd_throughput/avx512/4096: Analyzing
+simd_throughput/avx512/4096
+                        time:   [2.2410 µs 2.2476 µs 2.2565 µs]
+                        thrpt:  [1.8152 Gelem/s 1.8224 Gelem/s 1.8277 Gelem/s]
+Found 15 outliers among 100 measurements (15.00%)
+  8 (8.00%) high mild
+  7 (7.00%) high severe
+Benchmarking simd_throughput/optimized/4096
+Benchmarking simd_throughput/optimized/4096: Warming up for 3.0000 s
+Benchmarking simd_throughput/optimized/4096: Collecting 100 samples in estimated 10.000 s (4.5M iterations)

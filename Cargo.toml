@@ -25,6 +25,11 @@ name = "angle_encode_bench"
 harness = false
 path = "benchmarks/rust/angle_encode_bench.rs"
 
+[[bench]]
+name = "simd_comparison"
+harness = false
+path = "benchmarks/rust/simd_comparison.rs"
+
 [profile.release]
 opt-level = 3
 lto = true
