@@ -1,0 +1,105 @@
+{
+  "system": {
+    "os": "Linux 6.8.0-1029-aws",
+    "python": "3.12.3",
+    "cpu": "x86_64"
+  },
+  "results": [
+    {
+      "type": "single",
+      "data_size": 4,
+      "numpy_us": 3.6001205444335938,
+      "simd_us": 1.0013580322265625,
+      "speedup": 3.5952380952380953
+    },
+    {
+      "type": "single",
+      "data_size": 8,
+      "numpy_us": 2.5033950805664062,
+      "simd_us": 0.7152557373046875,
+      "speedup": 3.5
+    },
+    {
+      "type": "single",
+      "data_size": 16,
+      "numpy_us": 3.8623809814453125,
+      "simd_us": 0.7390975952148438,
+      "speedup": 5.225806451612903
+    },
+    {
+      "type": "single",
+      "data_size": 32,
+      "numpy_us": 6.461143493652344,
+      "simd_us": 0.6914138793945312,
+      "speedup": 9.344827586206897
+    },
+    {
+      "type": "single",
+      "data_size": 64,
+      "numpy_us": 11.730194091796875,
+      "simd_us": 0.6198883056640625,
+      "speedup": 18.923076923076923
+    },
+    {
+      "type": "single",
+      "data_size": 128,
+      "numpy_us": 22.530555725097656,
+      "simd_us": 0.7152557373046875,
+      "speedup": 31.5
+    },
+    {
+      "type": "single",
+      "data_size": 256,
+      "numpy_us": 43.72596740722656,
+      "simd_us": 0.762939453125,
+      "speedup": 57.3125
+    },
+    {
+      "type": "single",
+      "data_size": 512,
+      "numpy_us": 106.62078857421875,
+      "simd_us": 0.95367431640625,
+      "speedup": 111.8
+    },
+    {
+      "type": "single",
+      "data_size": 1024,
+      "numpy_us": 211.83490753173828,
+      "simd_us": 1.1444091796875,
+      "speedup": 185.10416666666666
+    },
+    {
+      "type": "batch",
+      "batch_size": 1,
+      "numpy_ms": 0.022339820861816406,
+      "simd_ms": 0.000667572021484375,
+      "speedup": 33.464285714285715
+    },
+    {
+      "type": "batch",
+      "batch_size": 10,
+      "numpy_ms": 0.22301673889160156,
+      "simd_ms": 0.0011920928955078125,
+      "speedup": 187.08
+    },
+    {
+      "type": "batch",
+      "batch_size": 100,
+      "numpy_ms": 2.155160903930664,
+      "simd_ms": 0.012135505676269531,
+      "speedup": 177.59135559921415
+    },
+    {
+      "type": "batch",
+      "batch_size": 1000,
+      "numpy_ms": 21.625494956970215,
+      "simd_ms": 0.2205371856689453,
+      "speedup": 98.05827027027027
+    }
+  ],
+  "summary": {
+    "avg_speedup": 70.96150210050551,
+    "max_speedup": 187.08,
+    "min_speedup": 3.5
+  }
+}
