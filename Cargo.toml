@@ -12,9 +12,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 numpy = "0.24.0"
 pyo3 = { version = "0.24", features = ["extension-module", "abi3-py38"] }
-ndarray = "0.16.1"
+ndarray = { version = "0.16.1", features = ["rayon"] }
 num-complex = "0.4.3"
 num_cpus = "1.16"
+rayon = "1.10"
 
 [dev-dependencies]
 criterion = "0.5"
