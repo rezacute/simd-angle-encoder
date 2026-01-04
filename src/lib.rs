@@ -1,6 +1,6 @@
-use pyo3::prelude::*;
-use numpy::{PyArray1, PyArray2, IntoPyArray, PyReadonlyArray1, PyReadonlyArray2};
 use numpy::PyUntypedArrayMethods;
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
+use pyo3::prelude::*;
 use std::f64::consts::PI;
 
 /// Angle encode data in SIMD-optimized Rust
@@ -52,10 +52,7 @@ fn angle_encode_batch_simd<'py>(
 
     // Reshape to (batch_size, n_qubits)
     let result_array = unsafe {
-        ndarray::ArrayView2::from_shape_ptr(
-            (batch_size, n_qubits),
-            result.as_ptr()
-        ).to_owned()
+        ndarray::ArrayView2::from_shape_ptr((batch_size, n_qubits), result.as_ptr()).to_owned()
     };
 
     result_array.into_pyarray(py)
@@ -96,7 +93,11 @@ pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
 #[pyfunction]
 fn get_simd_info() -> String {
     // Detect SIMD support based on target architecture
-    let simd_support = if cfg!(any(target_feature = "sse2", target_feature = "neon", target_feature = "simd128")) {
+    let simd_support = if cfg!(any(
+        target_feature = "sse2",
+        target_feature = "neon",
+        target_feature = "simd128"
+    )) {
         "Yes"
     } else {
         "Limited (compiler auto-vectorization only)"

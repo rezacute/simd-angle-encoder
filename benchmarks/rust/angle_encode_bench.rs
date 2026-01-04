@@ -3,16 +3,18 @@
 // Low-level Rust microbenchmarks to measure the performance of
 // the core encoding functions without Python overhead.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use simd_angle_encoder::simd_angle_encode;
 
 /// Generate random test data of specified size
 fn generate_data(size: usize) -> Vec<f64> {
-    (0..size).map(|i| {
-        // Use deterministic pseudo-random values based on index
-        let x = ((i as f64) * 1.3_4254_f64).fract();
-        x
-    }).collect()
+    (0..size)
+        .map(|i| {
+            // Use deterministic pseudo-random values based on index
+            let x = ((i as f64) * 1.3_4254_f64).fract();
+            x
+        })
+        .collect()
 }
 
 /// Benchmark single encode function with various data sizes
@@ -24,9 +26,7 @@ fn bench_encode_single(c: &mut Criterion) {
         let n_qubits = *size;
 
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &_size| {
-            b.iter(|| {
-                black_box(simd_angle_encode(black_box(&data), black_box(n_qubits)))
-            });
+            b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(n_qubits))));
         });
     }
 
@@ -40,11 +40,13 @@ fn bench_encode_qubits(c: &mut Criterion) {
     let data = generate_data(256); // Fixed data size
 
     for n_qubits in [4, 8, 16, 32, 64, 128, 256].iter() {
-        group.bench_with_input(BenchmarkId::from_parameter(n_qubits), n_qubits, |b, &n_qubits| {
-            b.iter(|| {
-                black_box(simd_angle_encode(black_box(&data), black_box(n_qubits)))
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::from_parameter(n_qubits),
+            n_qubits,
+            |b, &n_qubits| {
+                b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(n_qubits))));
+            },
+        );
     }
 
     group.finish();
@@ -59,9 +61,7 @@ fn bench_encode_data_smaller(c: &mut Criterion) {
     let n_qubits = 64;
 
     group.bench_function("data_16_qubits_64", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&data), black_box(n_qubits)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(n_qubits))));
     });
 
     group.finish();
@@ -76,9 +76,7 @@ fn bench_encode_data_larger(c: &mut Criterion) {
     let n_qubits = 16;
 
     group.bench_function("data_256_qubits_16", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&data), black_box(n_qubits)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(n_qubits))));
     });
 
     group.finish();
@@ -94,18 +92,23 @@ fn bench_encode_batch_simulation(c: &mut Criterion) {
         let n_qubits = 64;
 
         // Pre-generate all batches
-        let batches: Vec<Vec<f64>> = (0..*batch_size)
-            .map(|_| generate_data(data_dim))
-            .collect();
+        let batches: Vec<Vec<f64>> = (0..*batch_size).map(|_| generate_data(data_dim)).collect();
 
-        group.bench_with_input(BenchmarkId::from_parameter(batch_size), batch_size, |b, &_batch_size| {
-            b.iter(|| {
-                // Encode all batches
-                for batch_data in &batches {
-                    black_box(simd_angle_encode(black_box(batch_data), black_box(n_qubits)));
-                }
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::from_parameter(batch_size),
+            batch_size,
+            |b, &_batch_size| {
+                b.iter(|| {
+                    // Encode all batches
+                    for batch_data in &batches {
+                        black_box(simd_angle_encode(
+                            black_box(batch_data),
+                            black_box(n_qubits),
+                        ));
+                    }
+                });
+            },
+        );
     }
 
     group.finish();
@@ -118,33 +121,25 @@ fn bench_encode_edge_cases(c: &mut Criterion) {
     // All zeros
     let zeros: Vec<f64> = vec![0.0; 64];
     group.bench_function("zeros_64", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&zeros), black_box(64)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&zeros), black_box(64))));
     });
 
     // All ones
     let ones: Vec<f64> = vec![1.0; 64];
     group.bench_function("ones_64", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&ones), black_box(64)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&ones), black_box(64))));
     });
 
     // Mixed values including edge values
     let mixed: Vec<f64> = vec![0.0, 0.25, 0.5, 0.75, 1.0, 0.1, 0.9, 0.5];
     group.bench_function("mixed_8", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&mixed), black_box(8)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&mixed), black_box(8))));
     });
 
     // Single value
     let single: Vec<f64> = vec![0.5];
     group.bench_function("single_1", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&single), black_box(1)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&single), black_box(1))));
     });
 
     group.finish();
@@ -157,25 +152,19 @@ fn bench_encode_memory_patterns(c: &mut Criterion) {
     // Small allocations (fits in cache)
     let small_data = generate_data(16);
     group.bench_function("cache_friendly_small", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&small_data), black_box(16)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&small_data), black_box(16))));
     });
 
     // Medium allocations
     let medium_data = generate_data(256);
     group.bench_function("cache_friendly_medium", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&medium_data), black_box(256)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&medium_data), black_box(256))));
     });
 
     // Large allocations (may exceed cache)
     let large_data = generate_data(4096);
     group.bench_function("cache_unfriendly_large", |b| {
-        b.iter(|| {
-            black_box(simd_angle_encode(black_box(&large_data), black_box(4096)))
-        });
+        b.iter(|| black_box(simd_angle_encode(black_box(&large_data), black_box(4096))));
     });
 
     group.finish();
@@ -189,22 +178,26 @@ fn bench_encode_simd_chunks(c: &mut Criterion) {
     for size in [16, 32, 64, 128, 256, 512].iter() {
         let data = generate_data(*size);
 
-        group.bench_with_input(BenchmarkId::new("multiple_of_4", size), size, |b, &_size| {
-            b.iter(|| {
-                black_box(simd_angle_encode(black_box(&data), black_box(*size)))
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("multiple_of_4", size),
+            size,
+            |b, &_size| {
+                b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(*size))));
+            },
+        );
     }
 
     // Sizes that are NOT multiples of 4 (requires remainder handling)
     for size in [17, 33, 65, 129, 257, 513].iter() {
         let data = generate_data(*size);
 
-        group.bench_with_input(BenchmarkId::new("not_multiple_of_4", size), size, |b, &_size| {
-            b.iter(|| {
-                black_box(simd_angle_encode(black_box(&data), black_box(*size)))
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("not_multiple_of_4", size),
+            size,
+            |b, &_size| {
+                b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(*size))));
+            },
+        );
     }
 
     group.finish();
@@ -220,9 +213,7 @@ fn bench_encode_throughput(c: &mut Criterion) {
 
         group.throughput(criterion::Throughput::Elements(*size as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &_size| {
-            b.iter(|| {
-                black_box(simd_angle_encode(black_box(&data), black_box(*size)))
-            });
+            b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(*size))));
         });
     }
 
