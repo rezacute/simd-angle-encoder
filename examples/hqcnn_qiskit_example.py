@@ -258,7 +258,7 @@ def predict_single(data_point: np.ndarray, params: np.ndarray,
 
     Args:
         data_point: Input features
-        params: Circuit parameters
+        params: Circuit parameters (can be flat or shaped)
         n_qubits: Number of qubits
         n_layers: Number of layers
         use_simd: Whether to use SIMD encoding
@@ -266,10 +266,11 @@ def predict_single(data_point: np.ndarray, params: np.ndarray,
     Returns:
         Prediction (±1)
     """
+    params_flat = params.flatten()
     if use_simd:
-        circuit = build_hqcnn_with_encoding(data_point, params, n_qubits, n_layers)
+        circuit = build_hqcnn_with_encoding(data_point, params_flat, n_qubits, n_layers)
     else:
-        circuit = build_hqcnn_with_numpy_encoding(data_point, params, n_qubits, n_layers)
+        circuit = build_hqcnn_with_numpy_encoding(data_point, params_flat, n_qubits, n_layers)
 
     expectation = compute_expectation(circuit)
     return 1 if expectation > 0 else -1
@@ -334,10 +335,11 @@ def compute_loss(X: np.ndarray, y: np.ndarray,
     Returns:
         Loss value
     """
+    params_flat = params.flatten()
     predictions = np.array([
-        compute_expectation(build_hqcnn_with_encoding(x, params, n_qubits, n_layers))
+        compute_expectation(build_hqcnn_with_encoding(x, params_flat, n_qubits, n_layers))
         if use_simd else
-        compute_expectation(build_hqcnn_with_numpy_encoding(x, params, n_qubits, n_layers))
+        compute_expectation(build_hqcnn_with_numpy_encoding(x, params_flat, n_qubits, n_layers))
         for x in X
     ])
     loss = np.mean((predictions - y) ** 2)
@@ -478,8 +480,7 @@ def run_end_to_end_training(
     start_time = time.time()
     result = optimizer.minimize(
         fun=lambda p: objective_function(p, X_batch, y_batch, n_qubits, n_layers, use_simd=True),
-        x0=params_flat,
-        callback=callback
+        x0=params_flat
     )
     total_time = time.time() - start_time
 
@@ -487,7 +488,8 @@ def run_end_to_end_training(
     trained_params = result.x.reshape(params_shape)
 
     print(f"\n    Total training time: {total_time:.3f}s")
-    print(f"    Final loss: {losses[-1]:.4f}")
+    final_loss = objective_function(result.x, X_batch, y_batch, n_qubits, n_layers, use_simd=True)
+    print(f"    Final loss: {final_loss:.4f}")
 
     # 5. Final evaluation
     print("\n[5] Final Evaluation...")
