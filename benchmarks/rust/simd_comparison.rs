@@ -17,8 +17,8 @@ fn angle_encode_scalar(data: &[f64], n_qubits: usize) -> Vec<f64> {
     let mut result = Vec::with_capacity(n_qubits);
 
     let len = data.len().min(n_qubits);
-    for i in 0..len {
-        result.push(data[i] * two_pi);
+    for &val in data.iter().take(len) {
+        result.push(val * two_pi);
     }
 
     result.resize(n_qubits, 0.0);
@@ -65,46 +65,40 @@ fn bench_simd_comparison_all_sizes(c: &mut Criterion) {
         let data = generate_data(*size);
 
         // Scalar baseline
-        group.bench_with_input(
-            BenchmarkId::new("scalar", size),
-            size,
-            |b, &_size| {
-                b.iter(|| black_box(angle_encode_scalar(black_box(&data), black_box(*size))));
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("scalar", size), size, |b, &_size| {
+            b.iter(|| black_box(angle_encode_scalar(black_box(&data), black_box(*size))));
+        });
 
         // AVX2
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") {
-            group.bench_with_input(
-                BenchmarkId::new("avx2", size),
-                size,
-                |b, &_size| {
-                    b.iter(|| black_box(angle_encode_avx2_wrapper(black_box(&data), black_box(*size))));
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("avx2", size), size, |b, &_size| {
+                b.iter(|| {
+                    black_box(angle_encode_avx2_wrapper(
+                        black_box(&data),
+                        black_box(*size),
+                    ))
+                });
+            });
         }
 
         // AVX-512
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx512f") {
-            group.bench_with_input(
-                BenchmarkId::new("avx512", size),
-                size,
-                |b, &_size| {
-                    b.iter(|| black_box(angle_encode_avx512_wrapper(black_box(&data), black_box(*size))));
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("avx512", size), size, |b, &_size| {
+                b.iter(|| {
+                    black_box(angle_encode_avx512_wrapper(
+                        black_box(&data),
+                        black_box(*size),
+                    ))
+                });
+            });
         }
 
         // Auto-dispatch (optimized)
-        group.bench_with_input(
-            BenchmarkId::new("optimized", size),
-            size,
-            |b, &_size| {
-                b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(*size))));
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("optimized", size), size, |b, &_size| {
+            b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(*size))));
+        });
     }
 
     group.finish();
@@ -122,46 +116,40 @@ fn bench_simd_throughput(c: &mut Criterion) {
         group.throughput(Throughput::Elements(*size as u64));
 
         // Scalar baseline
-        group.bench_with_input(
-            BenchmarkId::new("scalar", size),
-            size,
-            |b, &_size| {
-                b.iter(|| black_box(angle_encode_scalar(black_box(&data), black_box(*size))));
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("scalar", size), size, |b, &_size| {
+            b.iter(|| black_box(angle_encode_scalar(black_box(&data), black_box(*size))));
+        });
 
         // AVX2
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") {
-            group.bench_with_input(
-                BenchmarkId::new("avx2", size),
-                size,
-                |b, &_size| {
-                    b.iter(|| black_box(angle_encode_avx2_wrapper(black_box(&data), black_box(*size))));
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("avx2", size), size, |b, &_size| {
+                b.iter(|| {
+                    black_box(angle_encode_avx2_wrapper(
+                        black_box(&data),
+                        black_box(*size),
+                    ))
+                });
+            });
         }
 
         // AVX-512
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx512f") {
-            group.bench_with_input(
-                BenchmarkId::new("avx512", size),
-                size,
-                |b, &_size| {
-                    b.iter(|| black_box(angle_encode_avx512_wrapper(black_box(&data), black_box(*size))));
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("avx512", size), size, |b, &_size| {
+                b.iter(|| {
+                    black_box(angle_encode_avx512_wrapper(
+                        black_box(&data),
+                        black_box(*size),
+                    ))
+                });
+            });
         }
 
         // Auto-dispatch (optimized)
-        group.bench_with_input(
-            BenchmarkId::new("optimized", size),
-            size,
-            |b, &_size| {
-                b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(*size))));
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("optimized", size), size, |b, &_size| {
+            b.iter(|| black_box(simd_angle_encode(black_box(&data), black_box(*size))));
+        });
     }
 
     group.finish();
@@ -177,13 +165,14 @@ fn bench_simd_alignment(c: &mut Criterion) {
 
         #[cfg(target_arch = "x86_64")]
         if is_x86_feature_detected!("avx2") {
-            group.bench_with_input(
-                BenchmarkId::new("avx2_aligned", size),
-                size,
-                |b, &_size| {
-                    b.iter(|| black_box(angle_encode_avx2_wrapper(black_box(&data), black_box(*size))));
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("avx2_aligned", size), size, |b, &_size| {
+                b.iter(|| {
+                    black_box(angle_encode_avx2_wrapper(
+                        black_box(&data),
+                        black_box(*size),
+                    ))
+                });
+            });
         }
 
         #[cfg(target_arch = "x86_64")]
@@ -192,7 +181,12 @@ fn bench_simd_alignment(c: &mut Criterion) {
                 BenchmarkId::new("avx512_aligned", size),
                 size,
                 |b, &_size| {
-                    b.iter(|| black_box(angle_encode_avx512_wrapper(black_box(&data), black_box(*size))));
+                    b.iter(|| {
+                        black_box(angle_encode_avx512_wrapper(
+                            black_box(&data),
+                            black_box(*size),
+                        ))
+                    });
                 },
             );
         }
@@ -208,7 +202,12 @@ fn bench_simd_alignment(c: &mut Criterion) {
                 BenchmarkId::new("avx2_unaligned", size),
                 size,
                 |b, &_size| {
-                    b.iter(|| black_box(angle_encode_avx2_wrapper(black_box(&data), black_box(*size))));
+                    b.iter(|| {
+                        black_box(angle_encode_avx2_wrapper(
+                            black_box(&data),
+                            black_box(*size),
+                        ))
+                    });
                 },
             );
         }
@@ -219,7 +218,12 @@ fn bench_simd_alignment(c: &mut Criterion) {
                 BenchmarkId::new("avx512_unaligned", size),
                 size,
                 |b, &_size| {
-                    b.iter(|| black_box(angle_encode_avx512_wrapper(black_box(&data), black_box(*size))));
+                    b.iter(|| {
+                        black_box(angle_encode_avx512_wrapper(
+                            black_box(&data),
+                            black_box(*size),
+                        ))
+                    });
                 },
             );
         }
@@ -262,7 +266,12 @@ fn bench_simd_cache_behavior(c: &mut Criterion) {
     #[cfg(target_arch = "x86_64")]
     if is_x86_feature_detected!("avx512f") {
         group.bench_function("avx512_l1_friendly", |b| {
-            b.iter(|| black_box(angle_encode_avx512_wrapper(black_box(&small), black_box(16))));
+            b.iter(|| {
+                black_box(angle_encode_avx512_wrapper(
+                    black_box(&small),
+                    black_box(16),
+                ))
+            });
         });
     }
 
@@ -271,7 +280,12 @@ fn bench_simd_cache_behavior(c: &mut Criterion) {
     #[cfg(target_arch = "x86_64")]
     if is_x86_feature_detected!("avx512f") {
         group.bench_function("avx512_l2_friendly", |b| {
-            b.iter(|| black_box(angle_encode_avx512_wrapper(black_box(&medium), black_box(512))));
+            b.iter(|| {
+                black_box(angle_encode_avx512_wrapper(
+                    black_box(&medium),
+                    black_box(512),
+                ))
+            });
         });
     }
 
@@ -280,7 +294,12 @@ fn bench_simd_cache_behavior(c: &mut Criterion) {
     #[cfg(target_arch = "x86_64")]
     if is_x86_feature_detected!("avx512f") {
         group.bench_function("avx512_cache_overflow", |b| {
-            b.iter(|| black_box(angle_encode_avx512_wrapper(black_box(&large), black_box(16384))));
+            b.iter(|| {
+                black_box(angle_encode_avx512_wrapper(
+                    black_box(&large),
+                    black_box(16384),
+                ))
+            });
         });
     }
 

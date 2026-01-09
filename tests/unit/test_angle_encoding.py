@@ -136,8 +136,12 @@ class TestAngleEncoding:
         assert result_f32.dtype == np.float64
         assert result_i32.dtype == np.float64
 
-        # Results should be consistent
-        assert np.allclose(result_f32[:2], result_i32[:2], rtol=1e-10)
+        # Results should be correct for each input
+        two_pi = 2.0 * np.pi
+        expected_f32 = data_f32.astype(np.float64) * two_pi
+        expected_i32 = data_i32.astype(np.float64) * two_pi
+        assert np.allclose(result_f32[:2], expected_f32, rtol=1e-10)
+        assert np.allclose(result_i32[:2], expected_i32, rtol=1e-10)
 
     def test_numerical_precision(self, n_qubits):
         """Test numerical precision with very small values."""

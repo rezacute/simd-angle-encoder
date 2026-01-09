@@ -5,11 +5,14 @@ use std::f64::consts::PI;
 
 // NEON intrinsics for ARM64
 #[cfg(target_arch = "aarch64")]
-use std::arch::aarch64::*;
+use std::arch::aarch64::{vdupq_n_f64, vld1q_f64, vmulq_f64, vst1q_f64};
 
 // AVX intrinsics for x86_64
 #[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
+use std::arch::x86_64::{
+    _mm256_loadu_pd, _mm256_mul_pd, _mm256_set1_pd, _mm256_storeu_pd, _mm512_loadu_pd,
+    _mm512_mul_pd, _mm512_set1_pd, _mm512_storeu_pd,
+};
 
 // Rayon for parallel processing (currently unused but kept for future optimizations)
 // use rayon::prelude::*;
@@ -47,12 +50,8 @@ fn angle_encode_batch_simd<'py>(
     batch_data: PyReadonlyArray2<f64>,
     n_qubits: usize,
 ) -> Bound<'py, PyArray2<f64>> {
-    // Correctly extract dimensions from numpy array
-    let shape = batch_data.shape();
-    let _batch_size = shape[0];
-
     // Use sequential processing for all batch sizes (remove parallel overhead)
-    return angle_encode_batch_sequential(batch_data, n_qubits, py);
+    angle_encode_batch_sequential(batch_data, n_qubits, py)
 }
 
 /// Sequential batch processing optimized for x86 SIMD
@@ -68,8 +67,7 @@ fn angle_encode_batch_sequential<'py>(
     let batch_size = shape[0];
 
     // Pre-allocate result with exact size (avoid reallocations)
-    let mut result = Vec::with_capacity(batch_size * n_qubits);
-    unsafe { result.set_len(batch_size * n_qubits); }
+    let mut result: Vec<f64> = vec![0.0; batch_size * n_qubits];
 
     // Get array view (handles non-contiguous arrays)
     let data_array = batch_data.as_array();
@@ -85,7 +83,7 @@ fn angle_encode_batch_sequential<'py>(
 
         // Encode directly into result buffer
         let result_slice = &mut result[b * n_qubits..(b + 1) * n_qubits];
-        let _ = simd_angle_encode_into_buffer(batch_slice, result_slice);
+        simd_angle_encode_into_buffer(batch_slice, result_slice);
     }
 
     // Reshape to (batch_size, n_qubits)
@@ -96,15 +94,18 @@ fn angle_encode_batch_sequential<'py>(
     result_array.into_pyarray(py)
 }
 
-/// NEON-optimized angle encoding for ARM64
+/// NEON-optimized angle encoding for `aarch64`
 /// Processes 2 doubles per iteration (128-bit SIMD width)
+///
+/// # Safety
+///
+/// Caller must ensure NEON is supported (checked via `is_arm_feature_detected!`)
+/// We maintain bounds checking and only use intrinsics within safe bounds
 #[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "neon")]
+#[must_use]
 pub unsafe fn angle_encode_neon(data: &[f64], n_qubits: usize) -> Vec<f64> {
-    // SAFETY: Caller must ensure NEON is supported (checked via is_arm_feature_detected!)
-    // We maintain bounds checking and only use intrinsics within safe bounds
-
-    let two_pi_vec = vdupq_n_f64(2.0 * PI);  // Broadcast 2π constant
+    let two_pi_vec = vdupq_n_f64(2.0 * PI); // Broadcast 2π constant
     let mut result = Vec::with_capacity(n_qubits);
 
     // Process 2 doubles at a time (NEON processes 2 f64 in 128-bit register)
@@ -140,12 +141,16 @@ pub unsafe fn angle_encode_neon(data: &[f64], n_qubits: usize) -> Vec<f64> {
     result
 }
 
-/// AVX-512 optimized angle encoding for x86_64
+/// AVX-512 optimized angle encoding for `x86_64`
 /// Processes 8 doubles per iteration (512-bit SIMD width)
+///
+/// # Safety
+///
+/// Caller must ensure AVX-512 is supported (checked via `is_x86_feature_detected!`)
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
+#[must_use]
 pub unsafe fn angle_encode_avx512(data: &[f64], n_qubits: usize) -> Vec<f64> {
-    // SAFETY: Caller must ensure AVX-512 is supported (checked via is_x86_feature_detected!)
     let two_pi_vec = _mm512_set1_pd(2.0 * PI);
     let mut result = Vec::with_capacity(n_qubits);
 
@@ -182,12 +187,16 @@ pub unsafe fn angle_encode_avx512(data: &[f64], n_qubits: usize) -> Vec<f64> {
     result
 }
 
-/// AVX2 optimized angle encoding for x86_64
+/// AVX2 optimized angle encoding for `x86_64`
 /// Processes 4 doubles per iteration (256-bit SIMD width)
+///
+/// # Safety
+///
+/// Caller must ensure AVX2 is supported (checked via `is_x86_feature_detected!`)
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
+#[must_use]
 pub unsafe fn angle_encode_avx2(data: &[f64], n_qubits: usize) -> Vec<f64> {
-    // SAFETY: Caller must ensure AVX2 is supported (checked via is_x86_feature_detected!)
     let two_pi_vec = _mm256_set1_pd(2.0 * PI);
     let mut result = Vec::with_capacity(n_qubits);
 
@@ -231,8 +240,8 @@ fn angle_encode_scalar(data: &[f64], n_qubits: usize) -> Vec<f64> {
     let mut result = Vec::with_capacity(n_qubits);
 
     let len = data.len().min(n_qubits);
-    for i in 0..len {
-        result.push(data[i] * two_pi);
+    for &val in data.iter().take(len) {
+        result.push(val * two_pi);
     }
 
     result.resize(n_qubits, 0.0);
@@ -240,27 +249,24 @@ fn angle_encode_scalar(data: &[f64], n_qubits: usize) -> Vec<f64> {
 }
 
 /// SIMD-optimized angle encoding with direct buffer writing (zero-allocation)
-/// 
+///
 /// Optimized for batch processing - writes directly to pre-allocated buffer
 /// Includes memory alignment and prefetching optimizations for x86
-#[must_use]
 pub fn simd_angle_encode_into_buffer(data: &[f64], output: &mut [f64]) {
-    let n_qubits = output.len();
     const SMALL_SIZE: usize = 32;
+    let n_qubits = output.len();
 
     // Fast path: Stack allocation for small data
     if n_qubits <= SMALL_SIZE {
         let two_pi = 2.0 * PI;
         let len = data.len().min(n_qubits);
-        
+
         // Direct write to output buffer
-        for i in 0..len {
-            output[i] = data[i] * two_pi;
+        for (i, &val) in data.iter().enumerate().take(len) {
+            output[i] = val * two_pi;
         }
         // Zero-fill remainder
-        for i in len..n_qubits {
-            output[i] = 0.0;
-        }
+        output[len..n_qubits].fill(0.0);
         return;
     }
 
@@ -272,23 +278,27 @@ pub fn simd_angle_encode_into_buffer(data: &[f64], output: &mut [f64]) {
             unsafe {
                 // Prefetch first cache line
                 std::arch::x86_64::_mm_prefetch(
-                    data.as_ptr() as *const i8, 
-                    std::arch::x86_64::_MM_HINT_T0
+                    data.as_ptr().cast::<i8>(),
+                    std::arch::x86_64::_MM_HINT_T0,
                 );
                 // Prefetch output buffer
                 std::arch::x86_64::_mm_prefetch(
-                    output.as_ptr() as *const i8, 
-                    std::arch::x86_64::_MM_HINT_T0
+                    output.as_ptr().cast::<i8>(),
+                    std::arch::x86_64::_MM_HINT_T0,
                 );
             }
         }
 
         if data.len() >= 4 && n_qubits >= 4 {
             if is_x86_feature_detected!("avx512f") {
-                unsafe { return angle_encode_avx512_into_buffer(data, output); }
+                unsafe {
+                    return angle_encode_avx512_into_buffer(data, output);
+                }
             }
             if is_x86_feature_detected!("avx2") {
-                unsafe { return angle_encode_avx2_into_buffer(data, output); }
+                unsafe {
+                    return angle_encode_avx2_into_buffer(data, output);
+                }
             }
         }
     }
@@ -296,21 +306,27 @@ pub fn simd_angle_encode_into_buffer(data: &[f64], output: &mut [f64]) {
     #[cfg(target_arch = "aarch64")]
     {
         if data.len() >= 2 && n_qubits >= 2 {
-            unsafe { return angle_encode_neon_into_buffer(data, output); }
+            unsafe {
+                return angle_encode_neon_into_buffer(data, output);
+            }
         }
     }
 
     // Fallback: scalar with direct buffer writes
-    let _ = angle_encode_scalar_into_buffer(data, output);
+    angle_encode_scalar_into_buffer(data, output);
 }
 
 /// AVX-512 optimized angle encoding with direct buffer writing
+///
+/// # Safety
+///
+/// Caller must ensure AVX-512 is supported (checked via `is_x86_feature_detected!`)
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
 pub unsafe fn angle_encode_avx512_into_buffer(data: &[f64], output: &mut [f64]) {
     let n_qubits = output.len();
     let two_pi_vec = _mm512_set1_pd(2.0 * PI);
-    
+
     let data_len = data.len().min(n_qubits);
     let simd_chunks = (data_len / 8) * 8;
     let mut i = 0;
@@ -337,12 +353,16 @@ pub unsafe fn angle_encode_avx512_into_buffer(data: &[f64], output: &mut [f64]) 
 }
 
 /// AVX2 optimized angle encoding with direct buffer writing
+///
+/// # Safety
+///
+/// Caller must ensure AVX2 is supported (checked via `is_x86_feature_detected!`)
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
 pub unsafe fn angle_encode_avx2_into_buffer(data: &[f64], output: &mut [f64]) {
     let n_qubits = output.len();
     let two_pi_vec = _mm256_set1_pd(2.0 * PI);
-    
+
     let data_len = data.len().min(n_qubits);
     let simd_chunks = (data_len / 4) * 4;
     let mut i = 0;
@@ -369,12 +389,16 @@ pub unsafe fn angle_encode_avx2_into_buffer(data: &[f64], output: &mut [f64]) {
 }
 
 /// NEON optimized angle encoding with direct buffer writing
+///
+/// # Safety
+///
+/// Caller must ensure NEON is supported (checked via `is_arm_feature_detected!`)
 #[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "neon")]
 pub unsafe fn angle_encode_neon_into_buffer(data: &[f64], output: &mut [f64]) {
     let n_qubits = output.len();
     let two_pi_vec = vdupq_n_f64(2.0 * PI);
-    
+
     let data_len = data.len().min(n_qubits);
     let simd_chunks = (data_len / 2) * 2;
     let mut i = 0;
@@ -399,26 +423,23 @@ pub unsafe fn angle_encode_neon_into_buffer(data: &[f64], output: &mut [f64]) {
         i += 1;
     }
 }
-#[must_use]
 fn angle_encode_scalar_into_buffer(data: &[f64], output: &mut [f64]) {
     let n_qubits = output.len();
     let two_pi = 2.0 * PI;
     let len = data.len().min(n_qubits);
-    
-    for i in 0..len {
-        output[i] = data[i] * two_pi;
+
+    for (i, &val) in data.iter().enumerate().take(len) {
+        output[i] = val * two_pi;
     }
     // Zero-fill remainder
-    for i in len..n_qubits {
-        output[i] = 0.0;
-    }
+    output[len..n_qubits].fill(0.0);
 }
 ///
 /// Multi-tier optimization strategy:
-/// 1. Fast: Stack allocation for small data (n_qubits <= 32)
-/// 2. Medium-x86: AVX-512 SIMD for x86_64 when available (8 doubles/iter)
-/// 3. Medium-x86: AVX2 SIMD for x86_64 when available (4 doubles/iter)
-/// 4. Medium-arm: NEON SIMD for ARM64 when available (2 doubles/iter)
+/// 1. Fast: Stack allocation for small data (`n_qubits` <= 32)
+/// 2. Medium-x86: AVX-512 SIMD for `x86_64` when available (8 doubles/iter)
+/// 3. Medium-x86: AVX2 SIMD for `x86_64` when available (4 doubles/iter)
+/// 4. Medium-arm: NEON SIMD for `ARM64` when available (2 doubles/iter)
 /// 5. Slow: Scalar fallback for compatibility
 #[must_use]
 pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
@@ -448,12 +469,16 @@ pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
         if data.len() >= 4 && n_qubits >= 4 {
             // Try AVX-512 first (best performance - 8 doubles at once)
             if is_x86_feature_detected!("avx512f") {
-                unsafe { return angle_encode_avx512(data, n_qubits); }
+                unsafe {
+                    return angle_encode_avx512(data, n_qubits);
+                }
             }
 
             // Fall back to AVX2 (good performance - 4 doubles at once)
             if is_x86_feature_detected!("avx2") {
-                unsafe { return angle_encode_avx2(data, n_qubits); }
+                unsafe {
+                    return angle_encode_avx2(data, n_qubits);
+                }
             }
         }
     }
@@ -464,7 +489,9 @@ pub fn simd_angle_encode(data: &[f64], n_qubits: usize) -> Vec<f64> {
         // Only use NEON if we have at least 2 elements (NEON processes 2 at a time)
         if data.len() >= 2 && n_qubits >= 2 {
             // SAFETY: All ARM64 Apple Silicon has NEON support
-            unsafe { return angle_encode_neon(data, n_qubits); }
+            unsafe {
+                return angle_encode_neon(data, n_qubits);
+            }
         }
     }
 
@@ -487,9 +514,7 @@ fn get_simd_info() -> String {
         // Compile-time detection: if we're on aarch64, we have NEON
         let simd_info = "Yes (NEON)";
 
-        return format!(
-            "SIMD Support: {simd_info}\nSystem: {os}/{arch}\nCPU Cores: {cpu_cores}"
-        );
+        format!("SIMD Support: {simd_info}\nSystem: {os}/{arch}\nCPU Cores: {cpu_cores}")
     }
 
     #[cfg(target_arch = "x86_64")]
@@ -505,16 +530,12 @@ fn get_simd_info() -> String {
             "No (scalar only)"
         };
 
-        return format!(
-            "SIMD Support: {simd_info}\nSystem: {os}/{arch}\nCPU Cores: {cpu_cores}"
-        );
+        format!("SIMD Support: {simd_info}\nSystem: {os}/{arch}\nCPU Cores: {cpu_cores}")
     }
 
     #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     {
-        format!(
-            "SIMD Support: Unknown\nSystem: {os}/{arch}\nCPU Cores: {cpu_cores}"
-        )
+        format!("SIMD Support: Unknown\nSystem: {os}/{arch}\nCPU Cores: {cpu_cores}")
     }
 }
 
